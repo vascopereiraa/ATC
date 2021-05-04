@@ -81,6 +81,13 @@ void imprimeListaAvioes(listaAviao* lista, int tamAvioes) {
 	}
 }
 
+int getIndiceAviao(aviao aux, listaAviao* listaAvioes, int tamAvioes) {
+	for (int i = 0; i < tamAvioes; ++i)
+		if (aux.procID == listaAvioes[i].av.procID)
+			return i;
+	return -1;
+}
+
 void WINAPI threadControloBuffer(LPVOID lpParam) {
 
 	infoControlador* dados = (infoControlador*)lpParam;
@@ -107,7 +114,6 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 					listaAvioes[pos].isFree = FALSE;
 					listaAvioes[pos].av.atuais.posX = 10;
 					*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-					// CopyMemory(listaAvioes[pos].memAviao.pAviao, &listaAvioes[pos].av, sizeof(aviao));
 					SetEvent(listaAvioes[pos].memAviao.hEvento);
 				}
 			}
@@ -116,8 +122,29 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 				// Avisa o aviao e manda fechar
 			}
 		}
-		// Trata cenas
-		// ....
+		else {
+			int pos = getIndiceAviao(aux, listaAvioes, tamAvioes);
+			if (pos == -1)
+				erro(L"indice -1");
+			else {
+				
+				// Cenas .....
+				//Verifica se é aeroporto?
+				//	Se é, verifica se é destino
+				//		Se sim, fica lá e termina viagem
+				//	Senao continua
+				// 
+				// verifica se ha avioes nessa posicao
+				// Se sim, troca de sitio ou espera
+				// Senao avança
+
+				if(verificaAvioesPosicao()) { 
+					listaAvioes[pos].av = aux;
+				}
+				*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+				SetEvent(listaAvioes[pos].memAviao.hEvento);
+			}
+		}
 		imprimeListaAvioes(listaAvioes, tamAvioes);
 	}
 

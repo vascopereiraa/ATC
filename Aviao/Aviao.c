@@ -30,6 +30,7 @@ int _tmain() {
 
 	aviao av;
 	av.procID = GetCurrentProcessId();
+	av.terminaExecucao = FALSE;
 	_tprintf(L"%d\n", av.procID);
 
 	while (1) {
