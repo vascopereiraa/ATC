@@ -32,9 +32,6 @@
     <ClInclude Include="Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MemoriaParilhada.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Controlador.h">
       <Filter>Header Files</Filter>
     </ClInclude>

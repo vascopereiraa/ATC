@@ -2,7 +2,7 @@
 #include <tchar.h>
 
 #include "Utils.h"
-#include "MemoriaParilhada.h"
+#include "Controlador.h"
 
 /* FUNCOES PARA CONTROLAR O BUFFER CIRCULAR */
 
@@ -62,6 +62,45 @@ void encerraBufferCircular(controloBufferCirc* controlo) {
 
 /* FUNCOES PARA CONTROLAR A MEMORIA PARTILHADA DO AVIAO */
 
-BOOL abreMemoriaPartilhada(memoriaPartilhada* memPart) {
+BOOL abreMemoriaPartilhada(listaAviao* av) {
+
+	TCHAR nomeSHM[STR_TAM];
+	_stprintf_s(nomeSHM, STR_TAM, SHM_AVIAO, av->av.procID);
+	av->memAviao.hFileMap = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, nomeSHM);
+	if (av->memAviao.hFileMap == NULL) {
+		erro(L"Nao foi possivel abrir a posicao de memoria do avião");
+		encerraMemoriaPartilhada(&av->memAviao);
+		return FALSE;
+	}
+
+	av->memAviao.pAviao = (aviao*) MapViewOfFile(av->memAviao.hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(aviao));
+	if (av->memAviao.pAviao == NULL) {
+		erro(L"Nao foi possivel mapear a zona de memoria do avião");
+		encerraMemoriaPartilhada(&av->memAviao);
+		return FALSE;
+	}
+
+	TCHAR nomeEvnt[STR_TAM];
+	_stprintf_s(nomeEvnt, STR_TAM, EVNT_AVIAO, av->av.procID);
+	av->memAviao.hEvento = OpenEvent(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, nomeEvnt);
+	if (av->memAviao.hEvento == NULL) {
+		erro(L"Nao foi possivel abrir o evento de sync com o avião");
+		encerraMemoriaPartilhada(&av->memAviao);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
+	
+	if (memPart->pAviao != NULL)
+		UnmapViewOfFile(memPart->pAviao);
+
+	if (memPart->hFileMap != NULL)
+		CloseHandle(memPart->hFileMap);
+
+	if (memPart->hEvento != NULL)
+		CloseHandle(memPart->hEvento);
 
 }

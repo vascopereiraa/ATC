@@ -38,7 +38,11 @@ int _tmain() {
 		bufCirc.pBuf->numProd = (bufCirc.pBuf->numProd + 1) % MAX_BUF;
 		ReleaseSemaphore(bufCirc.hSemMutexProd, 1, NULL);
 		ReleaseSemaphore(bufCirc.hSemItens, 1, NULL);
-		Sleep(5000);
+		Sleep(2000);
+
+		WaitForSingleObject(memPart.hEvento, INFINITE);
+		_tprintf(L"%d\n", memPart.pAviao->atuais.posX);
+		ResetEvent(memPart.hEvento);
 	}
 
 	encerraBufferCircular(&bufCirc);

@@ -149,7 +149,6 @@
   <ItemGroup>
     <ClInclude Include="Aviao.h" />
     <ClInclude Include="Controlador.h" />
-    <ClInclude Include="MemoriaParilhada.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

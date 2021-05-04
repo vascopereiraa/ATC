@@ -1,7 +1,19 @@
 #pragma once
 
-#include "MemoriaParilhada.h"
 #include "Aviao.h"
+
+typedef struct {
+	HANDLE hFileMap;
+	HANDLE hSemItens;
+	HANDLE hSemMutexProd;
+	bufferCircular* pBuf;
+} controloBufferCirc;
+
+typedef struct {
+	HANDLE hFileMap;
+	aviao* pAviao;
+	HANDLE hEvento;
+} memoriaPartilhada;
 
 typedef struct {
 	// Posicao livre
@@ -25,6 +37,14 @@ typedef struct {
 	// Flag para terminar a thread de controlo do bufCirc
 
 } infoControlador;
+
+// Funcoes de Controlo do Buffer Circular em SHMem
+BOOL criaBufferCircular(controloBufferCirc* bufCirc);
+void encerraBufferCircular(controloBufferCirc* controlo);
+
+// Funcoes de Controlo da Memoria Partilhada do Avião
+BOOL abreMemoriaPartilhada(listaAviao* aviao);
+void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
 
 // Funcoes para manuseamento de avioes
 BOOL isNovoAviao(aviao av, listaAviao* lista, int tamAvioes);

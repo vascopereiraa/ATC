@@ -5,7 +5,6 @@
 
 #include "Aviao.h"
 #include "Utils.h"
-#include "MemoriaParilhada.h"
 #include "Controlador.h"
 
 // DEFINES DO REGISTRY
@@ -100,13 +99,25 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 			int pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
 			if (pos != -1) {
 				listaAvioes[pos].av = aux;
-				listaAvioes[pos].isFree = FALSE;
+				if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
+					debug(L"Nao correu bem");
+					// Avisa o aviao e manda fechar
+				}
+				else {
+					listaAvioes[pos].isFree = FALSE;
+					listaAvioes[pos].av.atuais.posX = 10;
+					*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+					// CopyMemory(listaAvioes[pos].memAviao.pAviao, &listaAvioes[pos].av, sizeof(aviao));
+					SetEvent(listaAvioes[pos].memAviao.hEvento);
+				}
 			}
 			else {
 				erro(L"Nao exitem mais espacos para avioes");
+				// Avisa o aviao e manda fechar
 			}
 		}
 		// Trata cenas
+		// ....
 		imprimeListaAvioes(listaAvioes, tamAvioes);
 	}
 
