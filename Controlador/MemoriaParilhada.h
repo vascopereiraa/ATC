@@ -1,0 +1,26 @@
+#pragma once
+
+#include <Windows.h>
+
+#include "Aviao.h"
+
+typedef struct {
+	HANDLE hFileMap;
+	HANDLE hSemItens;
+	HANDLE hSemMutexProd;
+	bufferCircular* pBuf;
+} controloBufferCirc;
+
+typedef struct {
+	HANDLE hFileMap;
+	aviao* pAviao;
+	HANDLE hEvento;
+} memoriaPartilhada;
+
+// Funcoes de Controlo do Buffer Circular em SHMem
+BOOL criaBufferCircular(controloBufferCirc* bufCirc);
+void encerraBufferCircular(controloBufferCirc* controlo);
+
+// Funcoes de Controlo da Memoria Partilhada do Avião
+BOOL abreMemoriaPartilhada(memoriaPartilhada* memPart);
+
