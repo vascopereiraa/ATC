@@ -25,17 +25,26 @@ typedef struct {
 	// Metodo de resposta ao aviao
 	memoriaPartilhada memAviao;
 
-	// Thread especifica desse aviao & flag de termino
+	// Flag para verificar se está ativo
+	BOOL isAlive;
 
 } listaAviao;
 
 typedef struct {
+	TCHAR nome[STR_TAM];
+	coordenadas localizacao;
+} Aeroporto;
+
+typedef struct {
 	controloBufferCirc* bufCirc;
 	listaAviao* listaAvioes;
+	Aeroporto* listaAeroportos;
+
 	int tamAvioes;
+	int tamAeroporto;
+	int indiceAero;
 
 	// Flag para terminar a thread de controlo do bufCirc
-
 } infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem

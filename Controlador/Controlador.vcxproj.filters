@@ -24,6 +24,9 @@
     <ClCompile Include="MemoriaPartilhada.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Registry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aviao.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Controlador.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -60,6 +60,7 @@ BOOL criaMemoriaPartilhada(memoriaPartilhada* memPartilhada) {
 
 	TCHAR nomeMem[STR_TAM];
 	_stprintf_s(nomeMem, STR_TAM, SHM_AVIAO, procID);
+	_tprintf(L"\n\nNome da memoria partilhada: %s\n\n", nomeMem);
 	memPartilhada->hFileMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(aviao), nomeMem);
 	if (memPartilhada->hFileMap == NULL || GetLastError() == ERROR_ALREADY_EXISTS) {
 		fatal(L"Nao foi possivel criar a memoria partilhada do avião");

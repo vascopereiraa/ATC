@@ -25,6 +25,9 @@ typedef struct {
 	coordenadas atuais;				// Coordenadas atuas
 	TCHAR aeroDestino[STR_TAM];		// Nome do Aeroporto Destino
 	coordenadas destino;			// Coordenadas do aeroporto destino
+	coordenadas proxCoord;
+	int capMaxima;					// Capacidade maxima do avião
+	int velocidade;					// Velocidade de posições por segundo
 
 	// flag para terminar aviao
 	BOOL terminaExecucao;

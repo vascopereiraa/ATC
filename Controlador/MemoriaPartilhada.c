@@ -66,6 +66,7 @@ BOOL abreMemoriaPartilhada(listaAviao* av) {
 
 	TCHAR nomeSHM[STR_TAM];
 	_stprintf_s(nomeSHM, STR_TAM, SHM_AVIAO, av->av.procID);
+	_tprintf(L"\n\nNome da memoria partilhada: %s\n\n", nomeSHM);
 	av->memAviao.hFileMap = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, nomeSHM);
 	if (av->memAviao.hFileMap == NULL) {
 		erro(L"Nao foi possivel abrir a posicao de memoria do avião");

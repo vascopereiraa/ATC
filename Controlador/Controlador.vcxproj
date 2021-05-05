@@ -144,11 +144,13 @@
   <ItemGroup>
     <ClCompile Include="Controlador.c" />
     <ClCompile Include="MemoriaPartilhada.c" />
+    <ClCompile Include="Registry.c" />
     <ClCompile Include="Utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aviao.h" />
     <ClInclude Include="Controlador.h" />
+    <ClInclude Include="Registry.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
