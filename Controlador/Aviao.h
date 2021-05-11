@@ -13,10 +13,10 @@ typedef struct {
 } memoriaPartilhada;
 
 typedef struct {
-	int isFree;				// Posicao livre
+	boolean isFree;				// Posicao livre
 	aviao av;					// Informacao sobre o aviao
 	memoriaPartilhada memAviao;	// Metodo de resposta ao aviao
-	int isAlive;				// Flag para verificar se está ativo
+	boolean isAlive;				// Flag para verificar se está ativo
 } listaAviao;
 
 // Funcoes para manuseamento de avioes

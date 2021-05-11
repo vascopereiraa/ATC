@@ -35,6 +35,8 @@ int _tmain() {
 	// Carrega dados do Registry
 	controladorRegistry(&infoControl.tamAeroporto, &infoControl.tamAvioes);
 
+	_tprintf(L"\n\nValores do registry: %d %d\n\n", infoControl.tamAeroporto, infoControl.tamAvioes);
+
 	// Inicializa a lista de Aeroportos
 	aeroporto* aeroportos = inicializaListaAeroportos(infoControl.tamAeroporto);
 	if (aeroportos == NULL) {
@@ -107,6 +109,9 @@ void encerraControlador(infoControlador* infoControl) {
 
 void menu(infoControlador* infoControl) {
 
+	_tprintf(L"\n\n VALOR DOS TAMS: %d %d\n\n", infoControl->tamAeroporto, infoControl->tamAvioes);
+
+
 	int opcao;
 
 	while (!*(infoControl->terminaControlador)) {
@@ -114,6 +119,7 @@ void menu(infoControlador* infoControl) {
 		_tprintf(L"1 - Criar aeroportos\n");
 		_tprintf(L"2 - Listar aeroportos\n");
 		_tprintf(L"3 - Listar avioes\n");
+		_tprintf(L"4 - Suspender/alterar entrada a novos aviões\n");
 		_tprintf(L"\n");
 		_tprintf(L"0 - Termina Controlador\n");
 		_tscanf_s(L"%i", &opcao);
@@ -126,16 +132,17 @@ void menu(infoControlador* infoControl) {
 			break;
 		case 2: // Listar aeroportos
 			_tprintf(L"Lista de aeroportos:\n");
-			imprimeListaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero);
+			imprimeListaAeroporto(infoControl->listaAeroportos, infoControl->indiceAero);
 			_tprintf(L"\n");
 			break;
 		case 3:	// Listar avioes
 			_tprintf(L"Lista de avioes:\n");
-			imprimeListaAvioes(infoControl->listaAvioes, &infoControl->tamAvioes);
+			imprimeListaAvioes(infoControl->listaAvioes, infoControl->tamAvioes);
 			_tprintf(L"\n");
 			break;
 		case 4: // Suspender aceitacao de novos avioes
-			infoControl->suspendeNovosAvioes = (*infoControl->suspendeNovosAvioes + 1) % 1;
+			*(infoControl->suspendeNovosAvioes) = (*(infoControl->suspendeNovosAvioes) + 1) % 2;
+			_tprintf(L"\n\n VALOR DO CONTROL: %d\n", *(infoControl->suspendeNovosAvioes));
 			_tprintf(L"Aceitação de novos aviões alterada\n");
 			break;
 		case 0:

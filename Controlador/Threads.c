@@ -18,6 +18,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	aeroporto* listaAeroportos = dados->listaAeroportos;
 	int tamAvioes = dados->tamAvioes;
 	int tamAeroportos = dados->tamAeroporto;
+	int pos = 0;
 
 	aviao aux;
 	while (1) {
@@ -25,38 +26,50 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 		if (WaitForSingleObject(bufCirc->hSemItens, 5000) == WAIT_OBJECT_0) {
 			aux = bufCirc->pBuf->buf[bufCirc->pBuf->numCons];
 			bufCirc->pBuf->numCons = (bufCirc->pBuf->numCons + 1) % MAX_BUF;
-			if (isNovoAviao(aux, listaAvioes, tamAvioes) && dados->suspendeNovosAvioes == 0) {
-				int pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
-				if (pos != -1) {
-					listaAvioes[pos].av = aux;
-					if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
-						debug(L"Nao correu bem");
-						// Avisa o aviao e manda fechar
-					}
-					else {
-						listaAvioes[pos].isFree = FALSE;
-						listaAvioes[pos].isAlive = TRUE;
-						//Ao registar o aviao, verifica se existe aeroporto de origem e destino
-						if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
-							//listaAvioes[pos].av.terminaExecucao = TRUE;
+			if (isNovoAviao(aux, listaAvioes, tamAvioes)) {
+					pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
+					if (pos != -1) {
+						listaAvioes[pos].av = aux;
+						if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
+							debug(L"Nao correu bem");
 							aux.terminaExecucao = TRUE;
-							_tprintf(L"Não existem o aeroporto de origem ou destino\n");
+							SetEvent(listaAvioes[pos].memAviao.hEvento);
+							// Avisa o aviao e manda fechar
 						}
 						else {
-							_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
+							if (*(dados->suspendeNovosAvioes)) {
+								debug(L"AVIAO VAI ACABAR!!!!");
+								listaAvioes[pos].isFree = TRUE;
+								aux.terminaExecucao = TRUE;
+								SetEvent(listaAvioes[pos].memAviao.hEvento);
+							}
+							else {
+								listaAvioes[pos].isFree = FALSE;
+								listaAvioes[pos].isAlive = TRUE;
+								//Ao registar o aviao, verifica se existe aeroporto de origem e destino
+								if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
+									//listaAvioes[pos].av.terminaExecucao = TRUE;
+									aux.terminaExecucao = TRUE;
+									_tprintf(L"Não existem o aeroporto de origem ou destino\n");
+								}
+								else {
+									_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
+								}
+								listaAvioes[pos].av = aux;
+								*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+								SetEvent(listaAvioes[pos].memAviao.hEvento);
+							}
 						}
-						listaAvioes[pos].av = aux;
-						*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-						SetEvent(listaAvioes[pos].memAviao.hEvento);
 					}
-				}
-				else {
-					erro(L"Nao exitem mais espacos para avioes");
-					// Avisa o aviao e manda fechar
-				}
+					else {
+						erro(L"Nao exitem mais espacos para avioes");
+						aux.terminaExecucao = TRUE;
+						SetEvent(listaAvioes[pos].memAviao.hEvento);
+						// Avisa o aviao e manda fechar
+					}
 			}
 			else {
-				int pos = getIndiceAviao(aux, listaAvioes, tamAvioes);
+				pos = getIndiceAviao(aux, listaAvioes, tamAvioes);
 				if (pos == -1)
 					erro(L"indice -1");
 				else {
@@ -88,8 +101,10 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	while (!*(dados->terminaControlador)) {
 		Sleep(3000);
 		for (int i = 0; i < dados->tamAvioes; i++) {
-			if (listaAvioes[i].isAlive)
+			if (listaAvioes[i].isAlive) {
+				debug(L"Estou vivo!");
 				listaAvioes[i].isAlive = FALSE;
+			}
 			else
 				listaAvioes[i].isFree = TRUE;
 		}

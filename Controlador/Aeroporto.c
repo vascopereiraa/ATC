@@ -32,8 +32,8 @@ BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos
 	return TRUE;
 }
 
-void imprimeListaAeroporto(const aeroporto* lista, const int* tamLista) {
-	for (int i = 0; i < *tamLista; ++i)
+void imprimeListaAeroporto(const aeroporto* lista, const int tamLista) {
+	for (int i = 0; i < tamLista; ++i)
 		_tprintf(L"Aeroporto %s:\nLocalização: x = %d\ty = %d\n",
 			lista[i].nome, lista[i].localizacao.posX, lista[i].localizacao.posY);
 	_tprintf(L"\n");

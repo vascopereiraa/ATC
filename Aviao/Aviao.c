@@ -106,8 +106,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 		fflush(stdout);*/
 		weirdFlag = 0;
 		// Verifica se deve ou não terminar Execução
-		if (memPart.pAviao->terminaExecucao)
+		if (memPart.pAviao->terminaExecucao) {
 			break;
+		}
 		else {
 			if (memPart.pAviao->atuais.posX == av.atuais.posX &&
 				memPart.pAviao->atuais.posY == av.atuais.posY) {

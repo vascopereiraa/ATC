@@ -1,7 +1,8 @@
 
 #include <tchar.h>
-
+#include "Aviao.h"
 #include "MemoriaPartilhada.h"
+#include "../Controlador/Utils.h"
 
 /* FUNCOES PARA CONTROLAR O BUFFER CIRCULAR */
 
