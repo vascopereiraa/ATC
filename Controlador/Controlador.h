@@ -1,6 +1,12 @@
-#pragma once
 
+#ifndef __CONTROLADOR_H__
+#define __CONTROLADOR_H__
+
+#include <Windows.h>
+
+#include "../Aviao/Aviao.h"
 #include "Aviao.h"
+#include "Aeroporto.h"
 
 typedef struct {
 	HANDLE hFileMap;
@@ -10,52 +16,33 @@ typedef struct {
 } controloBufferCirc;
 
 typedef struct {
-	HANDLE hFileMap;
-	aviao* pAviao;
-	HANDLE hEvento;
-} memoriaPartilhada;
+	controloBufferCirc* bufCirc;		// Estrutura de dados do buffer circular
+	listaAviao* listaAvioes;			// Array de avioes
+	aeroporto* listaAeroportos;		// Array de aeroportos
 
-typedef struct {
-	// Posicao livre
-	BOOL isFree;
-	
-	// Informacao sobre o aviao
-	aviao av;
+	int tamAvioes;					// Tamanho do array de avioes
+	int tamAeroporto;				// Tamanho do array de aeroportos
+	int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
 
-	// Metodo de resposta ao aviao
-	memoriaPartilhada memAviao;
-
-	// Flag para verificar se está ativo
-	BOOL isAlive;
-
-} listaAviao;
-
-typedef struct {
-	TCHAR nome[STR_TAM];
-	coordenadas localizacao;
-} Aeroporto;
-
-typedef struct {
-	controloBufferCirc* bufCirc;
-	listaAviao* listaAvioes;
-	Aeroporto* listaAeroportos;
-
-	int tamAvioes;
-	int tamAeroporto;
-	int indiceAero;
-
-	// Flag para terminar a thread de controlo do bufCirc
+	int* terminaControlador;		// Flag para terminar o controlador
+	int* suspendeNovosAvioes;		// Flag para suspender/aceitar novos avioes
 } infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem
 BOOL criaBufferCircular(controloBufferCirc* bufCirc);
 void encerraBufferCircular(controloBufferCirc* controlo);
 
-// Funcoes de Controlo da Memoria Partilhada do Avião
-BOOL abreMemoriaPartilhada(listaAviao* aviao);
-void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
+void encerraControlador(infoControlador* infoControl);
+void menu(infoControlador* infoControl);
 
-// Funcoes para manuseamento de avioes
-BOOL isNovoAviao(aviao av, listaAviao* lista, int tamAvioes);
-int getPrimeiraPosVazia(listaAviao* lista, int tamAvioes);
-void imprimeListaAvioes(listaAviao* lista, int tamAvioes);
+// Threads do controlador
+void WINAPI threadControloBuffer(LPVOID lpParam);
+void WINAPI threadTimer(LPVOID lpParam);
+
+// Funcoes - Registry
+HKEY abreOuCriaChave();
+void obtemValoresRegistry(HKEY chave, int* maxAeroportos, int* maxAvioes);
+void criaValoresRegistry(HKEY chave);
+BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes);
+
+#endif // !__CONTROLADOR_H__

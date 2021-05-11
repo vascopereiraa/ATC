@@ -148,8 +148,8 @@
     <ClCompile Include="MemoriaPartilhada.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Controlador\Aviao.h" />
     <ClInclude Include="..\Controlador\Utils.h" />
+    <ClInclude Include="Aviao.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

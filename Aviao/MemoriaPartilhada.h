@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-#include "../Controlador/Aviao.h"
+#include "Aviao.h"
 
 typedef struct {
 	HANDLE hFileMap;

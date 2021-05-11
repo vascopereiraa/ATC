@@ -1,40 +1,36 @@
-#pragma once
+#ifndef __AVIAO_H__
+#define __AVIAO_H__
 
 #include <Windows.h>
-#include <tchar.h>
 
-// Dados - Controlador
-#define SHM_CONTROL _TEXT("SHM_CONTROL")
-#define SEM_MUTEX_PROD _TEXT("SEM_MUTEX_CONS")
-#define SEM_ITENS _TEXT("SEM_ITENS")
-#define MAX_BUF 10
-#define STR_TAM 50
-
-// Dados - Aviao
-#define SHM_AVIAO _TEXT("SHM_%d")
-#define EVNT_AVIAO _TEXT("EVNT_%d")
+#include "../Aviao/Aviao.h"
+#include "Aeroporto.h"
 
 typedef struct {
-	int posY;
-	int posX;
-} coordenadas;
+	HANDLE hFileMap;		// File Map do aviao
+	aviao* pAviao;			// Ponteiro para a SHM do aviao
+	HANDLE hEvento;			// Evento para leitura de dados no aviao
+} memoriaPartilhada;
 
 typedef struct {
-	DWORD procID;					// ID do processo do Aviao
-	TCHAR aeroOrigem[STR_TAM];		// Nome do Aeroporto Origem
-	coordenadas atuais;				// Coordenadas atuas
-	TCHAR aeroDestino[STR_TAM];		// Nome do Aeroporto Destino
-	coordenadas destino;			// Coordenadas do aeroporto destino
-	coordenadas proxCoord;
-	int capMaxima;					// Capacidade maxima do avião
-	int velocidade;					// Velocidade de posições por segundo
+	int isFree;				// Posicao livre
+	aviao av;					// Informacao sobre o aviao
+	memoriaPartilhada memAviao;	// Metodo de resposta ao aviao
+	int isAlive;				// Flag para verificar se está ativo
+} listaAviao;
 
-	// flag para terminar aviao
-	BOOL terminaExecucao;
-} aviao;
+// Funcoes para manuseamento de avioes
+listaAviao* inicializaListaAviao(int tamAvioes);
+BOOL isNovoAviao(aviao av, listaAviao* lista, int tamAvioes);
+int getPrimeiraPosVazia(listaAviao* lista, int tamAvioes);
+void imprimeListaAvioes(listaAviao* lista, int tamAvioes);
+int getIndiceAviao(aviao aux, listaAviao* listaAvioes, int tamAvioes);
+BOOL verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes);
+BOOL obterCoordenadasOrigemDestino(aviao* aux, aeroporto* listaAeroportos, int tamAeroportos);
 
-typedef struct {
-	aviao buf[MAX_BUF];		// Buffer Circular
-	int numCons;			// Prox. posicao a consumir
-	int numProd;			// Prox. posicao a produzir
-} bufferCircular;
+// Funcoes de Controlo da Memoria Partilhada do Avião
+BOOL abreMemoriaPartilhada(listaAviao* aviao);
+void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
+
+#endif // !__AVIAO_H__
+

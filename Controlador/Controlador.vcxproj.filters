@@ -27,6 +27,15 @@
     <ClCompile Include="Registry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Aeroporto.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Aviao.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Threads.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aviao.h">
@@ -38,7 +47,10 @@
     <ClInclude Include="Controlador.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Registry.h">
+    <ClInclude Include="Aeroporto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Constantes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

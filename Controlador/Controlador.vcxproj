@@ -142,15 +142,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Aeroporto.c" />
+    <ClCompile Include="Aviao.c" />
     <ClCompile Include="Controlador.c" />
     <ClCompile Include="MemoriaPartilhada.c" />
     <ClCompile Include="Registry.c" />
+    <ClCompile Include="Threads.c" />
     <ClCompile Include="Utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Aeroporto.h" />
     <ClInclude Include="Aviao.h" />
+    <ClInclude Include="Constantes.h" />
     <ClInclude Include="Controlador.h" />
-    <ClInclude Include="Registry.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

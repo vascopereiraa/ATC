@@ -2,7 +2,8 @@
 #include <tchar.h>
 #include <fcntl.h>
 
-#include "Registry.h"
+#include "Controlador.h"
+#include "Constantes.h"
 
 HKEY abreOuCriaChave() {
 	HKEY chave;

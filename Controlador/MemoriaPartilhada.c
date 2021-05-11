@@ -2,6 +2,7 @@
 #include <tchar.h>
 
 #include "Utils.h"
+#include "Aviao.h"
 #include "Controlador.h"
 
 /* FUNCOES PARA CONTROLAR O BUFFER CIRCULAR */
