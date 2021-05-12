@@ -28,3 +28,7 @@ typedef struct {
 	int numCons;			// Prox. posicao a consumir
 	int numProd;			// Prox. posicao a produzir
 } bufferCircular;
+
+// Funções do avião de comunicação
+// BOOL registaEntrada(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, aviao* av);
+// void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, aviao* av);

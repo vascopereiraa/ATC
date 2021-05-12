@@ -17,6 +17,14 @@ typedef struct {
 	HANDLE hEvento;
 } memoriaPartilhada;
 
+
+typedef struct {
+	controloBufferCirc bufCirc;
+	memoriaPartilhada memPart;
+	aviao av;
+	BOOL terminaAviao;
+} infoAviao;
+
 // Funcoes de Controlo do Buffer Circular
 BOOL abreBufferCircular(controloBufferCirc* bufCirc);
 void encerraBufferCircular(controloBufferCirc* controlo);
