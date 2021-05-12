@@ -44,7 +44,19 @@ int _tmain() {
 		return 1;
 	}
 	infoControl.listaAeroportos = aeroportos;
-		
+
+
+	// TEMPORARIO	
+	wcscpy_s(&infoControl.listaAeroportos[0].nome,STR_TAM, L"porto");
+	infoControl.listaAeroportos[0].localizacao.posX = 0;
+	infoControl.listaAeroportos[0].localizacao.posY = 0;
+
+	wcscpy_s(&infoControl.listaAeroportos[1].nome, STR_TAM, L"lisboa");
+	infoControl.listaAeroportos[1].localizacao.posX = 10;
+	infoControl.listaAeroportos[1].localizacao.posY = 10;
+
+	infoControl.indiceAero = 2;
+
 	// Inicializa a lista de Avioes
 	listaAviao* avioes = inicializaListaAviao(infoControl.tamAvioes);
 	if (avioes == NULL) {
@@ -52,7 +64,7 @@ int _tmain() {
 		return 1;
 	}
 	infoControl.listaAvioes = avioes;
-	
+
 	// Criar Memoria Partilhada do Controlador
 	controloBufferCirc bufCirc;
 	if (!criaBufferCircular(&bufCirc)) {
@@ -109,10 +121,15 @@ void encerraControlador(infoControlador* infoControl) {
 
 void menu(infoControlador* infoControl) {
 
-	_tprintf(L"\n\n VALOR DOS TAMS: %d %d\n\n", infoControl->tamAeroporto, infoControl->tamAvioes);
-
-
 	int opcao;
+	/*
+	* aero + nome + coordX + coordY
+	* l aero = lista aeroportos
+	* l avioes = lista avioes
+	* susp = suspender comunicações
+	* ret = retomar comunicações
+	* end = terminar controlador
+	*/
 
 	while (!*(infoControl->terminaControlador)) {
 		_tprintf(L"Menu:\n");

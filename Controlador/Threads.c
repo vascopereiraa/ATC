@@ -38,10 +38,9 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 						}
 						else {
 							if (*(dados->suspendeNovosAvioes)) {
-								debug(L"AVIAO VAI ACABAR!!!!");
+								debug(L"O avião não pode entrar ! Comunicação suspensa");
 								listaAvioes[pos].isFree = TRUE;
 								aux.terminaExecucao = TRUE;
-								SetEvent(listaAvioes[pos].memAviao.hEvento);
 							}
 							else {
 								listaAvioes[pos].isFree = FALSE;
@@ -55,10 +54,10 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 								else {
 									_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
 								}
-								listaAvioes[pos].av = aux;
-								*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-								SetEvent(listaAvioes[pos].memAviao.hEvento);
 							}
+							listaAvioes[pos].av = aux;
+							*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+							SetEvent(listaAvioes[pos].memAviao.hEvento);
 						}
 					}
 					else {
@@ -102,7 +101,8 @@ void WINAPI threadTimer(LPVOID lpParam) {
 		Sleep(3000);
 		for (int i = 0; i < dados->tamAvioes; i++) {
 			if (listaAvioes[i].isAlive) {
-				debug(L"Estou vivo!");
+				//debug(L"Estou vivo!");
+				_tprintf(L"Aviao: [%id] está vivo !\n", listaAvioes[i].av.procID);
 				listaAvioes[i].isAlive = FALSE;
 			}
 			else
