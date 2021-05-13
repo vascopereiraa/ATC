@@ -49,13 +49,18 @@ aeroporto* inicializaListaAeroportos(int tamLista) {
 	return aeroportos;
 }
 
-BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero) {
+BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando) {
 	aeroporto aux;
+	TCHAR* buffer = NULL,*token = NULL;
+	//Ignorar 1 palavra identificadora do comando!
+	token = wcstok_s(comando, L" ", &buffer);
 
-	_tprintf(L"Indique o nome do aeroporto: \n");
-	_tscanf_s(L"%s", aux.nome, STR_TAM);
-	_tprintf(L"Indique as coordenadas do aeroporto: \n");
-	_tscanf_s(L"%i %i", &aux.localizacao.posX, &aux.localizacao.posY);
+	//_tprintf(L"\nString: %s\n\n", comando);
+	token = wcstok_s(NULL, L" ", &buffer);
+	wcscpy_s(&aux.nome, STR_TAM, token);
+	aux.localizacao.posX = _ttoi(wcstok_s(NULL, L" ", &buffer));
+	aux.localizacao.posY = _ttoi(wcstok_s(NULL, L" ", &buffer));
+	//_tprintf(L"\n\nNome: %s posX: %i posY: %i\n\n", aux.nome, aux.localizacao.posX, aux.localizacao.posY);
 
 	if (!verificaNomeAeroporto(aux, lista, indiceAero)) {
 		_tprintf(L"Já existe um aeroporto com esse nome!\n");

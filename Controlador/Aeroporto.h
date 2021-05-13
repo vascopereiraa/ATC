@@ -16,6 +16,6 @@ BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const in
 BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos);
 void imprimeListaAeroporto(const aeroporto* lista, const int tamLista);
 aeroporto* inicializaListaAeroportos(int tamLista);
-BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero);
+BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando);
 
 #endif

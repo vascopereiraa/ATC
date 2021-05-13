@@ -104,5 +104,4 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 
 	if (memPart->hEvento != NULL)
 		CloseHandle(memPart->hEvento);
-
 }

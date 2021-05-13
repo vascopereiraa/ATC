@@ -47,7 +47,6 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 								listaAvioes[pos].isAlive = TRUE;
 								//Ao registar o aviao, verifica se existe aeroporto de origem e destino
 								if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
-									//listaAvioes[pos].av.terminaExecucao = TRUE;
 									aux.terminaExecucao = TRUE;
 									_tprintf(L"Não existem o aeroporto de origem ou destino\n");
 								}
@@ -72,20 +71,34 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 				if (pos == -1)
 					erro(L"indice -1");
 				else {
-					listaAvioes[pos].isAlive = TRUE;
-					if (!verificaAvioesPosicao(aux, listaAeroportos, tamAeroportos, listaAvioes, tamAvioes)) {
-						debug(L"Pode avancar da posição");
-						aux.atuais = aux.proxCoord;
+					if (aux.destino.posX == -1) {
+						if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
+							aux.terminaExecucao = TRUE;
+							_tprintf(L"Não existem o aeroporto de origem ou destino\n");
+						}
+						else {
+							_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
+						}
+						listaAvioes[pos].av = aux;
+						*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+						SetEvent(listaAvioes[pos].memAviao.hEvento);
 					}
 					else {
-						// DEBUG 
-						listaAvioes[0].av.atuais.posX = 8;
-						listaAvioes[0].av.atuais.posY = 8;
-						debug(L"Não pode avancar!! Espera!");
+						listaAvioes[pos].isAlive = TRUE;
+						if (!verificaAvioesPosicao(aux, listaAeroportos, tamAeroportos, listaAvioes, tamAvioes)) {
+							debug(L"Pode avancar da posição");
+							aux.atuais = aux.proxCoord;
+						}
+						else {
+							// DEBUG 
+							listaAvioes[0].av.atuais.posX = 8;
+							listaAvioes[0].av.atuais.posY = 8;
+							debug(L"Não pode avancar!! Espera!");
+						}
+						listaAvioes[pos].av = aux;
+						*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+						SetEvent(listaAvioes[pos].memAviao.hEvento);
 					}
-					listaAvioes[pos].av = aux;
-					*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-					SetEvent(listaAvioes[pos].memAviao.hEvento);
 				}
 			}
 			imprimeListaAvioes(listaAvioes, tamAvioes);
@@ -102,7 +115,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 		for (int i = 0; i < dados->tamAvioes; i++) {
 			if (listaAvioes[i].isAlive) {
 				//debug(L"Estou vivo!");
-				_tprintf(L"Aviao: [%id] está vivo !\n", listaAvioes[i].av.procID);
+				_tprintf(L"Aviao: [%i] está vivo !\n", listaAvioes[i].av.procID);
 				listaAvioes[i].isAlive = FALSE;
 			}
 			else

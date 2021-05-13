@@ -57,11 +57,6 @@ BOOL verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeropor
 
 	//ProxCoord ? Assumindo que a 1º posição está correta devido a verificacao com obterCoordenadasOrigemDestino
 	for (int i = 0; i < tamAeroportos; i++) {
-		/*if (listaAeroportos[i].localizacao.posX == aux.proxCoord.posX &&
-			listaAeroportos[i].localizacao.posY == aux.proxCoord.posY) {
-			_tprintf(L"\n\nEstá no aeroporto de origem !\n\n");
-			return FALSE;
-		}*/
 		if (listaAeroportos[i].localizacao.posX == aux.proxCoord.posX && aux.destino.posX == aux.proxCoord.posX
 			&& listaAeroportos[i].localizacao.posY == aux.proxCoord.posY && aux.destino.posY == aux.proxCoord.posY) {
 			_tprintf(L"\n\nEstá no aeroporto de destino !\n\n");
@@ -87,7 +82,7 @@ BOOL obterCoordenadasOrigemDestino(aviao * aux, aeroporto * listaAeroportos, int
 		if (_tcscmp(listaAeroportos[i].nome, aux->aeroOrigem) == 0) {
 			aux->atuais.posX = listaAeroportos[i].localizacao.posX;
 			aux->atuais.posY = listaAeroportos[i].localizacao.posY;
-			_tprintf(L"Destino x: [%i] y: [%i]", aux->atuais.posX, aux->atuais.posY);
+			_tprintf(L"Origem x: [%i] y: [%i]", aux->atuais.posX, aux->atuais.posY);
 			_tprintf(L"\nAtribuido aeroporto origem [%s] !\n", listaAeroportos[i].nome);
 			++contador;
 		}

@@ -84,8 +84,21 @@ BOOL criaMemoriaPartilhada(memoriaPartilhada* memPartilhada) {
 		encerraMemoriaPartilhada(memPartilhada);
 		return FALSE;
 	}
-
 	return TRUE;
+}
+
+BOOL criaEventoViagem(infoAviao* infoAv) {
+	infoAv->hEventoViagem = CreateEvent(NULL, TRUE, FALSE, EVNT_VIAGEM);
+	if (infoAv->hEventoViagem == NULL) {
+		fatal(L"Nao foi possivel criar o evento do avião");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void encerraEventoViagem(infoAviao* infoAv) {
+	if (infoAv->hEventoViagem != NULL)
+		CloseHandle(infoAv->hEventoViagem);
 }
 
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
@@ -97,6 +110,5 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 		CloseHandle(memPart->hFileMap);
 
 	if (memPart->hEvento != NULL)
-		CloseHandle(memPart->hEvento);
-	
+		CloseHandle(memPart->hEvento);	
 }
