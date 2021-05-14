@@ -1,6 +1,10 @@
 #ifndef __CONSTANTES_H__
 #define __CONSTANTES_H__
 
+// DEBUG
+#define DEBUG
+#define TESTES
+
 // Controlador
 #define SHM_CONTROL _TEXT("SHM_CONTROL")
 #define SEM_MUTEX_PROD _TEXT("SEM_MUTEX_CONS")

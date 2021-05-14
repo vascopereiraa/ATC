@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <fcntl.h>
 #include <tchar.h>
+#include <time.h>
 
 #include "../Aviao/MemoriaPartilhada.h"
 #include "../Controlador/Utils.h"
@@ -14,7 +15,6 @@ BOOL registaEntrada(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avi
 		bufCirc->pBuf->numProd = (bufCirc->pBuf->numProd + 1) % MAX_BUF;
 	ReleaseSemaphore(bufCirc->hSemMutexProd, 1, NULL);
 	ReleaseSemaphore(bufCirc->hSemItens, 1, NULL);
-	//Sleep(1000);
 	WaitForSingleObject(memPart->hEvento, INFINITE);
 	if (memPart->pAviao->terminaExecucao)
 		return FALSE;
@@ -89,8 +89,8 @@ void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avia
 		if (memPart->pAviao->atuais.posX == av->destino.posX &&
 			memPart->pAviao->atuais.posY == av->destino.posY) {
 			debug(L"Cheguei ao meu destino!!!");
-			wcscpy_s(&av->aeroOrigem, STR_TAM, av->aeroDestino);
-			wcscpy_s(&av->aeroDestino, STR_TAM, L"vazio");
+			_tcscpy_s(&av->aeroOrigem, STR_TAM, av->aeroDestino);
+			_tcscpy_s(&av->aeroDestino, STR_TAM, L"vazio");
 			// Reset as coordenadas para o controlador reconhecer que não é a sua 1º viagem
 			av->destino.posX = -1;
 			av->destino.posY = -1;
@@ -100,6 +100,17 @@ void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avia
 	}
 }
 
+void imprimeDadosAviao(aviao* av) {
+	_tprintf(L"\n");
+	_tprintf(L"\nAvião nr: %d\n", av->procID);
+	_tprintf(L"Capacidade: %d\tVelocidade: %d\n", av->capMaxima, av->velocidade);
+	_tprintf(L"Origem: %s\n", av->aeroOrigem);
+	if(!_tcscmp(av->aeroDestino, L"vazio"))
+		_tprintf(L"Destino: SEM DESTINO\n");
+	else
+		_tprintf(L"Destino: %s\n", av->aeroDestino);
+	_tprintf(L"\n");
+}
 
 void menu(infoAviao* lpParam) {
 	infoAviao* dados = lpParam;
@@ -107,32 +118,40 @@ void menu(infoAviao* lpParam) {
 	TCHAR comando[STR_TAM];
 	TCHAR* buffer = NULL;
 	TCHAR* token = NULL;
+	
 	/* Commandos
 	* 1 - Definir o destino: dest + "nomeDestino"
 	* 2 - Iniciar viagem: start
-	* 3 - Terminar a viagem a qualquer momento: end	*/
+	* 3 - Terminar a viagem a qualquer momento: end	
+	*/
+
 	while (!dados->terminaAviao) {
-		_tprintf(L"\nInsira o comando pretendido: \n");
+		system("cls");
+		imprimeDadosAviao(&dados->av);
+		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
 
 		token = _tcstok_s(comando, L" ", &buffer);
-		if (!_tcscmp(token, L"dest") && !_tcscmp(dados->av.aeroDestino, L"vazio")) {
-			token = wcstok_s(NULL, L" ", &buffer);
+		// && !_tcscmp(dados->av.aeroDestino, L"vazio")
+		if (!_tcscmp(token, L"dest")) {
+			token = _tcstok_s(NULL, L" ", &buffer);
 			if (token == NULL) {
-				_tprintf(L"Tem que inserir o destino!");
+				_tprintf(L"Tem que inserir um destino válido!");
 			}
 			else {
-				wcscpy_s(dados->av.aeroDestino, STR_TAM, token);
+				_tcscpy_s(dados->av.aeroDestino, STR_TAM, token);
 				if (!_tcscmp(dados->av.aeroOrigem, dados->av.aeroDestino)) {
-					_tprintf(L"\nTem que colocar um destino diferente da origem!\n");
-				}else {
+					_tcscpy_s(dados->av.aeroDestino, STR_TAM, L"vazio");
+					erro(L"Tem que colocar um destino diferente da origem!");
+				}
+				else {
 					if (!registaEntrada(&dados->bufCirc, &dados->memPart, &dados->av)) {
-						_tprintf(L"Vou ter que sair !\n");
-						return 1;
+						_tcscpy_s(dados->av.aeroDestino, STR_TAM, L"vazio");
+						erro(L"Destino inválido! Aeroporto inexistente, insere um novo destino!");
 					}
 					else {
-						debug(L"Correu tudo bem, vou continuar !");
+						debug(L"Correu tudo bem, vou continuar!");
 					}
 				}
 			}
@@ -157,37 +176,45 @@ void menu(infoAviao* lpParam) {
 	}
 }
 
+void WINAPI threadViagem(LPVOID lpParam) {
+	infoAviao* dados = (infoAviao*)lpParam;
 
-void WINAPI threadViagem(LPVOID lpParam);
+	while (!dados->terminaAviao) {
+		if (!WaitForSingleObject(dados->hEventoViagem, INFINITE)) {
+			if (!dados->terminaAviao)
+				comunicaAviao(&dados->bufCirc, &dados->memPart, &dados->av, dados);
+		}
+		ResetEvent(dados->hEventoViagem);
+	}
+}
 
 int _tmain(int argc, TCHAR* argv[]) {
+
 #ifdef UNICODE
 	(void) _setmode(_fileno(stdin), _O_WTEXT);
 	(void) _setmode(_fileno(stdout), _O_WTEXT);
 	(void) _setmode(_fileno(stderr), _O_WTEXT);
 #endif
+
 	srand(time(NULL));
-	_tprintf(L"Sou o Aviao!\n");
 
 	infoAviao infoAv;
 	infoAv.av.procID = GetCurrentProcessId();
 	infoAv.av.terminaExecucao = FALSE;
-	wcscpy_s(&infoAv.av.aeroDestino, STR_TAM, L"vazio");
+	_tcscpy_s(&infoAv.av.aeroDestino, STR_TAM, L"vazio");
 	infoAv.av.atuais.posX = -1;
 	infoAv.av.atuais.posY = -1;
 	infoAv.av.destino.posX = -1;
 	infoAv.av.destino.posY = -1;
 
+	// Tratamento de argumentos
 	if (argc != 4) {
 		fatal(L"Tem que indicar como argumentos: Capacidade máxima, velocidade e aeroporto de origem");
 		return 1;
 	}
-	// Tratamento de argumentos
-	_tprintf(L"%d\n", infoAv.av.procID);
 	infoAv.av.capMaxima = _ttoi(argv[1]);
 	infoAv.av.velocidade = _ttoi(argv[2]);
 	_tcscpy_s(infoAv.av.aeroOrigem, STR_TAM, argv[3]);
-	_tprintf(L"Cap: %i Vel: %i Aero: %s", infoAv.av.capMaxima, infoAv.av.velocidade, infoAv.av.aeroOrigem);
 
 	// Abrir Memoria Partilhada do Controlador
 	if (!abreBufferCircular(&infoAv.bufCirc))
@@ -223,14 +250,4 @@ int _tmain(int argc, TCHAR* argv[]) {
 	encerraBufferCircular(&infoAv.bufCirc);
 	return 0;
 }
-void WINAPI threadViagem(LPVOID lpParam) {
-	infoAviao* dados = (infoAviao*)lpParam;
 
-	while (!dados->terminaAviao) {
-		if (!WaitForSingleObject(dados->hEventoViagem, INFINITE)) {
-			if(!dados->terminaAviao)
-				comunicaAviao(&dados->bufCirc, &dados->memPart, &dados->av, dados);
-		}
-		ResetEvent(dados->hEventoViagem);
-	}
-}

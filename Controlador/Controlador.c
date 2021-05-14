@@ -5,6 +5,7 @@
 
 #include "Controlador.h"
 #include "Utils.h"
+#include "Constantes.h"
 
 int _tmain() {
 
@@ -45,17 +46,17 @@ int _tmain() {
 	}
 	infoControl.listaAeroportos = aeroportos;
 
-
-	// TEMPORARIO	
-	wcscpy_s(&infoControl.listaAeroportos[0].nome,STR_TAM, L"porto");
+#ifdef TESTES
+	_tcscpy_s(&infoControl.listaAeroportos[0].nome,STR_TAM, L"porto");
 	infoControl.listaAeroportos[0].localizacao.posX = 0;
 	infoControl.listaAeroportos[0].localizacao.posY = 0;
 
-	wcscpy_s(&infoControl.listaAeroportos[1].nome, STR_TAM, L"lisboa");
+	_tcscpy_s(&infoControl.listaAeroportos[1].nome, STR_TAM, L"lisboa");
 	infoControl.listaAeroportos[1].localizacao.posX = 10;
 	infoControl.listaAeroportos[1].localizacao.posY = 10;
 
 	infoControl.indiceAero = 2;
+#endif
 
 	// Inicializa a lista de Avioes
 	listaAviao* avioes = inicializaListaAviao(infoControl.tamAvioes);
@@ -99,6 +100,7 @@ int _tmain() {
 	CloseHandle(hThreadTimer);
 	encerraControlador(&infoControl);
 
+	fim(L"... Controlador Encerrado ...");
 	return 0;
 }
 
@@ -124,21 +126,23 @@ void menu(infoControlador* infoControl) {
 	TCHAR comando[STR_TAM], comandoAux[STR_TAM];
 	TCHAR* buffer = NULL;
 	TCHAR* token = NULL;
+	
 	/*
 	* aero + nome + coordX + coordY
-	* l aero = lista aeroportos
-	* l avioes = lista avioes
+	* laero = lista aeroportos
+	* lavioes = lista avioes
 	* susp = suspender comunicações
 	* ret = retomar comunicações
 	* end = terminar controlador
 	*/
+
 	while (!*(infoControl->terminaControlador)) {
-		_tprintf(L"Insira o comando pretendido: \n");
+		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
-		wcscpy_s(&comandoAux, STR_TAM, comando);
+		
+		_tcscpy_s(&comandoAux, STR_TAM, comando);
 		token = _tcstok_s(comando, L" ", &buffer);
-		//_tprintf(L"COMANDO: %s  COMANDOAUX: %s", comando, comandoAux);
 		if (!_tcscmp(token, L"aero")) {
 			if (!adicionaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero, comandoAux))
 				_tprintf(L"\nNão foi possivel adicionar o aeroporto à lista\n\n");
@@ -155,8 +159,12 @@ void menu(infoControlador* infoControl) {
 			_tprintf(L"\n");
 		}
 		if (!_tcscmp(token, L"susp")) {
-			*(infoControl->suspendeNovosAvioes) = 1;
-			_tprintf(L"Aceitação de novos aviões alterada!\n");
+			if (*(infoControl->suspendeNovosAvioes) != 1) {
+				*(infoControl->suspendeNovosAvioes) = 1;
+				_tprintf(L"Aceitação de novos aviões suspendida!\n");
+			}
+			else
+				erro(L"A aceitação de novos aviões já se encontrava suspensa!");
 		}
 		if (!_tcscmp(token, L"ret")) {
 			*(infoControl->suspendeNovosAvioes) = 0;
@@ -166,47 +174,6 @@ void menu(infoControlador* infoControl) {
 			*(infoControl->terminaControlador) = 1;
 		}
 	}
-
-
-	//while (!*(infoControl->terminaControlador)) {
-	//	_tprintf(L"Menu:\n");
-	//	_tprintf(L"1 - Criar aeroportos\n");
-	//	_tprintf(L"2 - Listar aeroportos\n");
-	//	_tprintf(L"3 - Listar avioes\n");
-	//	_tprintf(L"4 - Suspender/alterar entrada a novos aviões\n");
-	//	_tprintf(L"\n");
-	//	_tprintf(L"0 - Termina Controlador\n");
-	//	_tscanf_s(L"%i", &opcao);
-
-	//	switch (opcao) {
-	//	case 1:	// Criar aeroportos
-	//		if (!adicionaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero))
-	//			_tprintf(L"\nNão foi possivel adicionar o aeroporto à lista\n\n");
-	//		_tprintf(L"\nAeroporto adicionado à lista de aeroportos\n\n");
-	//		break;
-	//	case 2: // Listar aeroportos
-	//		_tprintf(L"Lista de aeroportos:\n");
-	//		imprimeListaAeroporto(infoControl->listaAeroportos, infoControl->indiceAero);
-	//		_tprintf(L"\n");
-	//		break;
-	//	case 3:	// Listar avioes
-	//		_tprintf(L"Lista de avioes:\n");
-	//		imprimeListaAvioes(infoControl->listaAvioes, infoControl->tamAvioes);
-	//		_tprintf(L"\n");
-	//		break;
-	//	case 4: // Suspender aceitacao de novos avioes
-	//		*(infoControl->suspendeNovosAvioes) = (*(infoControl->suspendeNovosAvioes) + 1) % 2;
-	//		_tprintf(L"\n\n VALOR DO CONTROL: %d\n", *(infoControl->suspendeNovosAvioes));
-	//		_tprintf(L"Aceitação de novos aviões alterada\n");
-	//		break;
-	//	case 0:
-	//		*(infoControl->terminaControlador) = 1;
-	//		break;
-	//	default:
-	//		erro(L"Opcao nao definida");
-	//		break;
-	//	}
-	//};
 
 	// Manda todos os avioes encerrar
 }

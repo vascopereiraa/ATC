@@ -21,7 +21,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	int pos = 0;
 
 	aviao aux;
-	while (1) {
+	while (!*(dados->terminaControlador)) {
 		debug(L"Estou a espera");
 		if (WaitForSingleObject(bufCirc->hSemItens, 5000) == WAIT_OBJECT_0) {
 			aux = bufCirc->pBuf->buf[bufCirc->pBuf->numCons];

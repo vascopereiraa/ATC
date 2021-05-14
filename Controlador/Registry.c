@@ -77,7 +77,6 @@ BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes) {
 	TCHAR valueName[TAM];
 	DWORD valueContent;
 
-	//RegOpenKey(tipo de registry, caminho da chave, ponteiro para a handle aberta)
 	if (RegOpenKey(HKEY_CURRENT_USER, chave_nome, &chave) != ERROR_SUCCESS) {
 		_tprintf(_TEXT("A chave ainda nao foi criada!\n"));
 		if (RegCreateKeyEx(HKEY_CURRENT_USER, chave_nome, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &chave, &dwResult) == ERROR_SUCCESS) {

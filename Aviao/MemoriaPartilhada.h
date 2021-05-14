@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef __MEMORIA_PARTILHADA_H__
+#define __MEMORIA_PARTILHADA_H__
 
 #include <Windows.h>
 
@@ -36,3 +38,5 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
 // Objetos de sincronização
 void encerraEventoViagem(infoAviao* infoAv);
 BOOL criaEventoViagem(infoAviao* infoAv);
+
+#endif // !__MEMORIA_PARTILHADA_H__
