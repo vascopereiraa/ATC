@@ -10,7 +10,7 @@
 #define SEM_MUTEX_PROD _TEXT("SEM_MUTEX_CONS")
 #define SEM_ITENS _TEXT("SEM_ITENS")
 #define MAX_BUF 10
-#define STR_TAM 50
+#define STR_TAM 80
 
 // Aviao
 #define SHM_AVIAO _TEXT("SHM_%d")

@@ -25,7 +25,7 @@ void fatal(TCHAR* string) {
 }
 
 void fim(TCHAR* string) {
-	_tprintf("[FINAL] %s\n", string);
+	_tprintf(L"[FINAL] %s\n", string);
 	_tprintf(L"Pressione [ENTER] para terminar...\n");
 	(void)_gettchar();
 }

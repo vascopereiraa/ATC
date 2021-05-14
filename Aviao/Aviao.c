@@ -57,8 +57,6 @@ void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avia
 		bufCirc->pBuf->numProd = (bufCirc->pBuf->numProd + 1) % MAX_BUF;
 		ReleaseSemaphore(bufCirc->hSemMutexProd, 1, NULL);
 		ReleaseSemaphore(bufCirc->hSemItens, 1, NULL);
-		// to remove
-		Sleep(1000);
 		WaitForSingleObject(memPart->hEvento, INFINITE);
 		podeAvancar = 0;
 		// Verifica se deve ou não terminar Execução
@@ -71,8 +69,8 @@ void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avia
 				debug(L"Estou a espera...");
 				int random = rand() % 101;
 				if (random < 50) {
-					debug(L"Vou esperar 5 segundos para evitar colisão!");
-					Sleep(5000);
+					debug(L"Vou esperar 1 segundos para evitar colisão!");
+					Sleep(1000);
 				}
 				else {
 					if (av->proxCoord.posX + 1 < 1000) {
@@ -102,7 +100,7 @@ void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, avia
 
 void imprimeDadosAviao(aviao* av) {
 	_tprintf(L"\n");
-	_tprintf(L"\nAvião nr: %d\n", av->procID);
+	_tprintf(L"Avião nr: %d\n", av->procID);
 	_tprintf(L"Capacidade: %d\tVelocidade: %d\n", av->capMaxima, av->velocidade);
 	_tprintf(L"Origem: %s\n", av->aeroOrigem);
 	if(!_tcscmp(av->aeroDestino, L"vazio"))
@@ -119,10 +117,12 @@ void menu(infoAviao* lpParam) {
 	TCHAR* buffer = NULL;
 	TCHAR* token = NULL;
 	
-	/* Commandos
-	* 1 - Definir o destino: dest + "nomeDestino"
-	* 2 - Iniciar viagem: start
-	* 3 - Terminar a viagem a qualquer momento: end	
+	/*
+	* Commandos: 
+	* dest + "nomeDestino"		Definir o destino
+	* start						Iniciar viagem 
+	* end						Terminar a viagem a qualquer momento
+	* 
 	*/
 
 	while (!dados->terminaAviao) {
@@ -248,6 +248,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseHandle(hThreadViagem);
 	encerraMemoriaPartilhada(&infoAv.memPart);
 	encerraBufferCircular(&infoAv.bufCirc);
+
+	TCHAR stringFinal[STR_TAM];
+	_stprintf_s(stringFinal, STR_TAM, L"... Aviao %d Encerrado...", infoAv.av.procID);
+	fim(stringFinal);
 	return 0;
 }
 
