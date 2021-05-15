@@ -24,7 +24,7 @@ typedef struct {
 	memoriaPartilhada memPart;
 	aviao av;
 	BOOL terminaAviao;
-	HANDLE hMutexAviao;
+	CRITICAL_SECTION criticalSectionAviao;
 } infoAviao;
 
 // Funcoes de Controlo do Buffer Circular
@@ -36,7 +36,7 @@ BOOL criaMemoriaPartilhada(memoriaPartilhada* memPartilhada);
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
 
 // Objetos de sincronização
-BOOL criaMutexAviao(HANDLE* hMutexAviao);
-void encerraMutexAviao(HANDLE* hMutexAviao);
+void criaCriticalSectionAviao(LPCRITICAL_SECTION lpCriticalSectionAviao);
+void encerraCriticalSectionAviao(LPCRITICAL_SECTION lpCriticalSectionAviao);
 
 #endif // !__MEMORIA_PARTILHADA_H__

@@ -103,16 +103,10 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 		CloseHandle(memPart->hEvento);	
 }
 
-BOOL criaMutexAviao(HANDLE* hMutexAviao) {
-	hMutexAviao = CreateMutex(NULL, FALSE, NULL);
-	if (hMutexAviao == NULL) {
-		fatal(L"Nao foi possivel criar o mutex do avião");
-		return FALSE;
-	}
-	return TRUE;
+void criaCriticalSectionAviao(LPCRITICAL_SECTION lpCriticalSectionAviao) {
+	InitializeCriticalSection(lpCriticalSectionAviao);
 }
 
-void encerraMutexAviao(HANDLE* hMutexAviao) {
-	if (hMutexAviao != NULL)
-		CloseHandle(hMutexAviao);
+void encerraCriticalSectionAviao(LPCRITICAL_SECTION lpCriticalSectionAviao) {
+	DeleteCriticalSection(lpCriticalSectionAviao);
 }
