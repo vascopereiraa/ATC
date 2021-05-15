@@ -56,6 +56,7 @@ void encerraBufferCircular(controloBufferCirc* controlo) {
 	if (controlo->hSemItens != NULL)
 		CloseHandle(controlo->hSemItens);
 
+
 	if (controlo->hSemMutexProd != NULL)
 		CloseHandle(controlo->hSemMutexProd);
 

@@ -100,7 +100,9 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 			// Enviar mensagem ao aviao
 			*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
 			SetEvent(listaAvioes[pos].memAviao.hEvento);
+#ifdef DEBUG
 			Sleep(2000);
+#endif
 		}
 	}
 

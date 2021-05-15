@@ -17,14 +17,16 @@ BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const in
 	return TRUE;
 }
 
-BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos) {
-	int i = 0, j = 0;
-	for (i = aux.localizacao.posX - 5; i < aux.localizacao.posX + 5; i++) {
-		for (j = aux.localizacao.posY - 5; j < aux.localizacao.posY + 5; j++) {
-			if (i >= 0 && j >= 0) {
-				if (aux.localizacao.posX == listaAeroportos[i].localizacao.posX &&
-					aux.localizacao.posY == listaAeroportos[i].localizacao.posY) {
-					return FALSE;
+BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos, const int* tamAeroportos) {
+	int x = 0, y = 0;
+	for (x = aux.localizacao.posX - 5; x < aux.localizacao.posX + 5; x++) {
+		for (y = aux.localizacao.posY - 5; y < aux.localizacao.posY + 5; y++) {
+			if (aux.localizacao.posX + x >= 0 && aux.localizacao.posY + y >= 0) {
+				for (int i = 0; i < *tamAeroportos; ++i) {
+					if (aux.localizacao.posX + x == listaAeroportos[i].localizacao.posX &&
+						aux.localizacao.posY + y == listaAeroportos[i].localizacao.posY) {
+						return FALSE;
+					}
 				}
 			}
 		}
@@ -53,13 +55,19 @@ BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando) {
 	aeroporto aux;
 	TCHAR* buffer = NULL,*token = NULL;
 	//Ignorar 1 palavra identificadora do comando!
-	token = wcstok_s(comando, L" ", &buffer);
+	token = _tcstok_s(comando, L" ", &buffer);
 
 	//_tprintf(L"\nString: %s\n\n", comando);
-	token = wcstok_s(NULL, L" ", &buffer);
-	wcscpy_s(&aux.nome, STR_TAM, token);
-	aux.localizacao.posX = _ttoi(wcstok_s(NULL, L" ", &buffer));
-	aux.localizacao.posY = _ttoi(wcstok_s(NULL, L" ", &buffer));
+	token = _tcstok_s(NULL, L" ", &buffer);
+	_tcscpy_s(&aux.nome, STR_TAM, token);
+	aux.localizacao.posX = _ttoi(_tcstok_s(NULL, L" ", &buffer));
+	aux.localizacao.posY = _ttoi(_tcstok_s(NULL, L" ", &buffer));
+
+	if (aux.localizacao.posX > 1000 || aux.localizacao.posY > 1000) {
+		_tprintf(L"Posicao inacessivel!\n");
+		return FALSE;
+	}
+
 	//_tprintf(L"\n\nNome: %s posX: %i posY: %i\n\n", aux.nome, aux.localizacao.posX, aux.localizacao.posY);
 
 	if (!verificaNomeAeroporto(aux, lista, indiceAero)) {
@@ -67,7 +75,7 @@ BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando) {
 		return FALSE;
 	}
 
-	if (!verificaRaioAeroporto(aux, lista)) {
+	if (!verificaRaioAeroporto(aux, lista, indiceAero)) {
 		_tprintf(L"Já existe um aeroporto nessa posição ou num raio demasiado curto!\n");
 		return FALSE;
 	}

@@ -2,8 +2,8 @@
 #define __CONSTANTES_H__
 
 // DEBUG
-#define DEBUG
-#define TESTES
+//#define DEBUG
+//#define TESTES
 
 // Controlador
 #define SHM_CONTROL _TEXT("SHM_CONTROL")

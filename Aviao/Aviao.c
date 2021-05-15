@@ -95,8 +95,6 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 #endif
 			LeaveCriticalSection(&dados->criticalSectionAviao);
 		}
-		else
-			Sleep(2000);
 
 #ifdef DEBUG
 		EnterCriticalSection(&dados->criticalSectionAviao);
@@ -125,7 +123,6 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 			return 3;
 		}
 		
-		// *av = *(memPart->pAviao);
 		CopyMemory(av, memPart->pAviao, sizeof(aviao));
 
 		// Verifica se tem de encerrar
@@ -161,7 +158,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 			// O aeroporto origem não existe
 			if (av->atuais.posX == -2 && av->atuais.posY == -2) {
 				erro(L"O aeroporto origem nao existe!");
-				av->terminaExecucao = TRUE;
+				dados->terminaAviao = TRUE;
 				libertaDLL(dllLocation);
 				LeaveCriticalSection(&dados->criticalSectionAviao);
 				return 5;
@@ -207,13 +204,6 @@ void menu(infoAviao* dados) {
 
 	while (!dados->terminaAviao) {
 
-#ifndef DEBUG
-		system("cls");
-#endif
-		EnterCriticalSection(&dados->criticalSectionAviao);
-		//debug(L"MENU:");
-		//imprimeDadosAviao(&dados->av);
-		LeaveCriticalSection(&dados->criticalSectionAviao);
 		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
@@ -249,6 +239,9 @@ void menu(infoAviao* dados) {
 				dados->terminaAviao = TRUE;
 				LeaveCriticalSection(&dados->criticalSectionAviao);
 				return;
+			}
+			if (!_tcscmp(token, L"info")) {
+				imprimeDadosAviao(&dados->av);
 			}
 		}
 		LeaveCriticalSection(&dados->criticalSectionAviao);

@@ -70,7 +70,7 @@ int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroport
 	for (int i = 0; i < tamAeroportos; i++) {
 		if (listaAeroportos[i].localizacao.posX == aux.proxCoord.posX && aux.destino.posX == aux.proxCoord.posX
 			&& listaAeroportos[i].localizacao.posY == aux.proxCoord.posY && aux.destino.posY == aux.proxCoord.posY) {
-			_tprintf(L"\n\nEstá no aeroporto de destino !\n\n");
+			_tprintf(L"\n\nEstá no aeroporto de destino %d !\n\n", aux.procID);
 			return 1;
 		}
 	}
@@ -79,11 +79,11 @@ int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroport
 		if (listaAvioes[i].av.atuais.posX == aux.proxCoord.posX &&
 			listaAvioes[i].av.atuais.posY == aux.proxCoord.posY &&
 			listaAvioes->isFree == FALSE && listaAvioes[i].av.procID != aux.procID) {
-			_tprintf(L"\n\nTem avião no mesmo sitio !\n\n");
+			_tprintf(L"\n\nO avião %d encontrou o aviao %d no meio do ar !\n\n", aux.procID, listaAvioes[i].av.procID);
 			return 2;
 		}
 	}
-	_tprintf(L"\n\nPode avançar\n\n");
+	debug(L"Pode avançar");
 	return 0;
 }
 
