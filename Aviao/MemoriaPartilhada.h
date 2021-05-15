@@ -23,7 +23,6 @@ typedef struct {
 	controloBufferCirc bufCirc;
 	memoriaPartilhada memPart;
 	aviao av;
-	BOOL emViagem;
 	BOOL terminaAviao;
 	HANDLE hMutexAviao;
 } infoAviao;

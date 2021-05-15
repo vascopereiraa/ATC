@@ -10,6 +10,8 @@
 
 typedef int (*fcnDLL)(int, int, int, int, int*, int*);
 
+void imprimeDadosAviao(aviao* av);
+
 fcnDLL carregaDLL(TCHAR* dllLocation) {
 
 	SYSTEM_INFO systemInfo;
@@ -60,8 +62,8 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 
 	int resultado = 0, nextPos = 1;
 	while (!dados->terminaAviao) {
-		
-		if (dados->emViagem) {
+		// debug(L"Estou a enviar cenas");
+		if (av->emViagem) {
 			if (nextPos) {
 				// Calcula proxima posicao -> FUNCAO DLL
 				WaitForSingleObject(dados->hMutexAviao, INFINITE);
@@ -69,7 +71,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 					&av->proxCoord.posX, &av->proxCoord.posY);
 				switch (resultado) {
 				case 0:			// Chegou ao destino
-					dados->emViagem = FALSE;
+					av->emViagem = FALSE;
 					_tprintf(L"\nAviao chegou ao destino!\n");
 					break;
 				case 1:
@@ -92,6 +94,13 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 			ReleaseMutex(dados->hMutexAviao);
 #endif
 		}
+		else
+			Sleep(2000);
+
+#ifdef DEBUG
+		debug(L"THREAD:");
+		imprimeDadosAviao(&dados->av);
+#endif
 
 		// Escrever no buffer circular
 		WaitForSingleObject(bufCirc->hSemMutexProd, INFINITE);
@@ -109,7 +118,8 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 		WaitForSingleObject(memPart->hEvento, INFINITE);
 		
 		WaitForSingleObject(dados->hMutexAviao, INFINITE);
-		av = memPart->pAviao;
+		// *av = *(memPart->pAviao);
+		CopyMemory(av, memPart->pAviao, sizeof(aviao));
 
 		// Verifica se tem de encerrar
 		if (av->terminaExecucao) {
@@ -119,9 +129,9 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 		}
 			
 		// Verifica se a movimentação foi feita com sucesso
-		if (dados->emViagem) {
+		if (av->emViagem) {
 			nextPos = 1;
-			if (!(av->atuais.posX == av->proxCoord.posX && av->atuais.posY == av->proxCoord.posY)) {
+			if (av->proxCoord.posX == -2 && av->proxCoord.posY == -2) {
 				debug(L"A posicao pretendida encontrava-se ocupada!");
 				int random = rand() % 101;
 				if (random < 50) {
@@ -140,7 +150,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 		ReleaseMutex(dados->hMutexAviao);
 		ResetEvent(memPart->hEvento);
 	}
-	
+	debug(L"Aqui");
 	libertaDLL(dllLocation);
 	return 0;
 }
@@ -150,10 +160,12 @@ void imprimeDadosAviao(aviao* av) {
 	_tprintf(L"Avião nr: %d\n", av->procID);
 	_tprintf(L"Capacidade: %d\tVelocidade: %d\n", av->capMaxima, av->velocidade);
 	_tprintf(L"Origem: %s\n", av->aeroOrigem);
+	_tprintf(L"x = %d\ty = %d\n", av->atuais.posX, av->atuais.posY);
 	if(!_tcscmp(av->aeroDestino, L"vazio"))
 		_tprintf(L"Destino: SEM DESTINO\n");
 	else
 		_tprintf(L"Destino: %s\n", av->aeroDestino);
+	_tprintf(L"x = %d\ty = %d\n", av->destino.posX, av->destino.posY);
 	_tprintf(L"\n");
 }
 
@@ -177,48 +189,44 @@ void menu(infoAviao* dados) {
 		system("cls");
 #endif
 		WaitForSingleObject(dados->hMutexAviao, INFINITE);
+		debug(L"MENU:");
 		imprimeDadosAviao(&dados->av);
 		ReleaseMutex(dados->hMutexAviao);
 		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
-
+		
+		WaitForSingleObject(dados->hMutexAviao, INFINITE);
 		token = _tcstok_s(comando, L" ", &buffer);
-		// && !_tcscmp(dados->av.aeroDestino, L"vazio")
 		if (!_tcscmp(token, L"dest")) {
 			token = _tcstok_s(NULL, L" ", &buffer);
 			if (token == NULL) {
 				_tprintf(L"Tem que inserir um destino válido!");
 			}
 			else {
-				WaitForSingleObject(dados->hMutexAviao, INFINITE);
-				_tcscpy_s(dados->av.aeroDestino, STR_TAM, token);
-				if (!_tcscmp(dados->av.aeroOrigem, token))
+				if (!_tcscmp(dados->av.aeroOrigem, token)) {
 					erro(L"Tem que colocar um destino diferente da origem!");
+				}
 				else {
 					_tcscpy_s(dados->av.aeroDestino, STR_TAM, token);
 				}
-				ReleaseMutex(dados->hMutexAviao);
 			}
 		}
 		//Certificar que o token não tem lixo para _tcscmp funcionar como deveria!
 		if (token != NULL) {
 			if (!_tcscmp(token, L"start")) {
-				WaitForSingleObject(dados->hMutexAviao, INFINITE);
 				if (!_tcscmp(dados->av.aeroDestino, L"vazio"))
 					_tprintf(L"Tem que inserir um destino válido!");
 				else {
-					dados->emViagem = TRUE;
+					dados->av.emViagem = TRUE;
 				}
-				ReleaseMutex(dados->hMutexAviao);
 			}
 			if (!_tcscmp(token, L"end")) {
-				WaitForSingleObject(dados->hMutexAviao, INFINITE);
 				dados->terminaAviao = TRUE;
-				ReleaseMutex(dados->hMutexAviao);
 				return;
 			}
 		}
+		ReleaseMutex(dados->hMutexAviao);
 	}
 }
 
@@ -238,10 +246,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 	infoAv.av.atuais.posY = -1;
 	infoAv.av.destino.posX = -1;
 	infoAv.av.destino.posY = -1;
+	infoAv.av.proxCoord.posY = -1;
+	infoAv.av.proxCoord.posY = -1;
 	infoAv.av.terminaExecucao = FALSE;
+	infoAv.av.emViagem = FALSE;
 	_tcscpy_s(infoAv.av.aeroDestino, STR_TAM, L"vazio");
 
-	infoAv.emViagem = FALSE;
 	infoAv.terminaAviao = FALSE;
 
 	// Tratamento de argumentos

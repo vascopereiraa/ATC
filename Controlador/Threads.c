@@ -18,103 +18,109 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	aeroporto* listaAeroportos = dados->listaAeroportos;
 	int tamAvioes = dados->tamAvioes;
 	int tamAeroportos = dados->tamAeroporto;
-	int pos = 0;
 
+	int pos = 0;
 	aviao aux;
 	while (!*(dados->terminaControlador)) {
-		debug(L"Estou a espera");
-		if (WaitForSingleObject(bufCirc->hSemItens, 5000) == WAIT_OBJECT_0) {
-			aux = bufCirc->pBuf->buf[bufCirc->pBuf->numCons];
-			bufCirc->pBuf->numCons = (bufCirc->pBuf->numCons + 1) % MAX_BUF;
-			if (isNovoAviao(aux, listaAvioes, tamAvioes)) {
-					pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
-					if (pos != -1) {
-						listaAvioes[pos].av = aux;
-						if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
-							debug(L"Nao correu bem");
-							aux.terminaExecucao = TRUE;
-							SetEvent(listaAvioes[pos].memAviao.hEvento);
-							// Avisa o aviao e manda fechar
-						}
-						else {
-							if (*(dados->suspendeNovosAvioes)) {
-								debug(L"O avião não pode entrar ! Comunicação suspensa");
-								listaAvioes[pos].isFree = TRUE;
-								aux.terminaExecucao = TRUE;
-							}
-							else {
-								listaAvioes[pos].isFree = FALSE;
-								listaAvioes[pos].isAlive = TRUE;
-								//Ao registar o aviao, verifica se existe aeroporto de origem e destino
-								if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
-									aux.terminaExecucao = TRUE;
-									_tprintf(L"Não existem o aeroporto de origem ou destino\n");
-								}
-								else {
-									_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
-								}
-							}
-							listaAvioes[pos].av = aux;
-							*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-							SetEvent(listaAvioes[pos].memAviao.hEvento);
-						}
-					}
-					else {
-						erro(L"Nao exitem mais espacos para avioes");
-						aux.terminaExecucao = TRUE;
-						SetEvent(listaAvioes[pos].memAviao.hEvento);
-						// Avisa o aviao e manda fechar
-					}
-			}
-			else {
-				pos = getIndiceAviao(aux, listaAvioes, tamAvioes);
-				if (pos == -1)
-					erro(L"indice -1");
-				else {
-					if (aux.destino.posX == -1) {
-						if (!obterCoordenadasOrigemDestino(&aux, listaAeroportos, tamAeroportos)) {
-							aux.terminaExecucao = TRUE;
-							_tprintf(L"Não existem o aeroporto de origem ou destino\n");
-						}
-						else {
-							_tprintf(L"Aero origem x: [%i] y: [%i] \t Aero destino x: [%i] y: [%i]\n", aux.atuais.posX, aux.atuais.posY, aux.destino.posX, aux.destino.posY);
-						}
-						listaAvioes[pos].av = aux;
-						*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-						SetEvent(listaAvioes[pos].memAviao.hEvento);
-					}
-					else {
-						listaAvioes[pos].isAlive = TRUE;
-						if (!verificaAvioesPosicao(aux, listaAeroportos, tamAeroportos, listaAvioes, tamAvioes)) {
-							debug(L"Pode avancar da posição");
-							aux.atuais = aux.proxCoord;
-						}
-						else {
-							// DEBUG 
-							listaAvioes[0].av.atuais.posX = 8;
-							listaAvioes[0].av.atuais.posY = 8;
-							debug(L"Não pode avancar!! Espera!");
-						}
-						listaAvioes[pos].av = aux;
-						*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
-						SetEvent(listaAvioes[pos].memAviao.hEvento);
-					}
+		
+		// Ler o buffer Circular
+		WaitForSingleObject(bufCirc->hSemItens, INFINITE);
+		aux = bufCirc->pBuf->buf[bufCirc->pBuf->numCons];
+		bufCirc->pBuf->numCons = (bufCirc->pBuf->numCons + 1) % MAX_BUF;
+
+		// Regista aviao OU obtem a sua pos no array
+		if (isNovoAviao(aux, listaAvioes, tamAvioes)) {
+			pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
+			if (pos > -1) {
+				debug(L"Novo aviao");
+				listaAvioes[pos].av = aux;
+				listaAvioes[pos].isAlive = TRUE;
+				listaAvioes[pos].isFree = FALSE;
+				if (*dados->suspendeNovosAvioes) {
+					debug(L"Comunicação suspensa!");
+					listaAvioes[pos].isFree = TRUE;
+					listaAvioes[pos].av.terminaExecucao = TRUE;
+				}
+				if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
+					debug(L"Nao foi possivel abrir a mem do av");
+					listaAvioes[pos].av.terminaExecucao = TRUE;
+					listaAvioes[pos].isFree = TRUE;
 				}
 			}
-			imprimeListaAvioes(listaAvioes, tamAvioes);
 		}
+		else {
+			pos = getIndiceAviao(aux, listaAvioes, tamAvioes);
+			if (pos > -1) {
+				listaAvioes[pos].av = aux;
+				listaAvioes[pos].isAlive = TRUE;
+			}
+		}
+
+		// Trata dados avioes
+		_tprintf(L"\n");
+		_tprintf(L"Avião nr: %d\n", listaAvioes[pos].av.procID);
+		_tprintf(L"Capacidade: %d\tVelocidade: %d\n", listaAvioes[pos].av.capMaxima, listaAvioes[pos].av.velocidade);
+		_tprintf(L"Origem: %s\n", listaAvioes[pos].av.aeroOrigem);
+		_tprintf(L"x = %d\ty = %d\n", listaAvioes[pos].av.atuais.posX, listaAvioes[pos].av.atuais.posY);
+		if (!_tcscmp(listaAvioes[pos].av.aeroDestino, L"vazio"))
+			_tprintf(L"Destino: SEM DESTINO\n");
+		else
+			_tprintf(L"Destino: %s\n", listaAvioes[pos].av.aeroDestino);
+		_tprintf(L"x = %d\ty = %d\n", listaAvioes[pos].av.destino.posX, listaAvioes[pos].av.destino.posY);
+		_tprintf(L"\n");
+
+		if (listaAvioes[pos].av.terminaExecucao == FALSE) {
+			// Preenche coordenadas origem
+			if (listaAvioes[pos].av.atuais.posX == -1 && listaAvioes[pos].av.atuais.posY == -1) {
+				listaAvioes[pos].av.atuais = obterCoordenadas(listaAvioes[pos].av.aeroOrigem, listaAeroportos, tamAeroportos);
+			}
+			// Preenche destino
+			if (_tcscmp(listaAvioes[pos].av.aeroDestino, L"vazio")) {
+				listaAvioes[pos].av.destino = obterCoordenadas(listaAvioes[pos].av.aeroDestino, listaAeroportos, tamAeroportos);
+				if (listaAvioes[pos].av.destino.posX == -1)
+					_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
+			}
+
+			// Verifica disponibilidade espaco aerio
+			if (listaAvioes[pos].av.emViagem == TRUE)
+				switch (verificaAvioesPosicao(listaAvioes[pos].av, listaAeroportos, tamAeroportos, listaAvioes, tamAvioes)) {
+				case 0:		// Pode avancar
+					listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
+					listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
+					break;
+				case 1:		// Esta no aeroporto destino
+					_tcscpy_s(listaAvioes[pos].av.aeroOrigem, STR_TAM, listaAvioes[pos].av.aeroDestino);
+					_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
+					listaAvioes[pos].av.destino.posX = -1;
+					listaAvioes[pos].av.destino.posY = -1;
+					listaAvioes[pos].av.proxCoord.posX = -1;
+					listaAvioes[pos].av.proxCoord.posY = -1;
+					break;
+				case 2:		// Posicao esta ocupada
+					listaAvioes[pos].av.proxCoord.posX = -2;
+					listaAvioes[pos].av.proxCoord.posY = -2;
+					break;
+				}
+		}
+
+		// Enviar mensagem ao aviao
+		*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
+		SetEvent(listaAvioes[pos].memAviao.hEvento);
+		Sleep(2000);
 	}
+	debug(L"Passei aqui");
 }
 
 void WINAPI threadTimer(LPVOID lpParam) {
 	infoControlador* dados = (infoControlador*)lpParam;
 	listaAviao* listaAvioes = dados->listaAvioes;
 	int tamAvioes = dados->tamAvioes;
+	
 	while (!*(dados->terminaControlador)) {
 		Sleep(3000);
 		for (int i = 0; i < dados->tamAvioes; i++) {
 			if (listaAvioes[i].isAlive) {
-				//debug(L"Estou vivo!");
+				debug(L"Estou vivo!");
 				_tprintf(L"Aviao: [%i] está vivo !\n", listaAvioes[i].av.procID);
 				listaAvioes[i].isAlive = FALSE;
 			}

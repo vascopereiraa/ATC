@@ -14,9 +14,9 @@ typedef struct {
 } memoriaPartilhada;
 
 typedef struct {
-	boolean isFree;				// Posicao livre
-	aviao av;					// Informacao sobre o aviao
-	memoriaPartilhada memAviao;	// Metodo de resposta ao aviao
+	boolean isFree;					// Posicao livre
+	aviao av;						// Informacao sobre o aviao
+	memoriaPartilhada memAviao;		// Metodo de resposta ao aviao
 	boolean isAlive;				// Flag para verificar se está ativo
 } listaAviao;
 
@@ -26,8 +26,8 @@ BOOL isNovoAviao(aviao av, listaAviao* lista, int tamAvioes);
 int getPrimeiraPosVazia(listaAviao* lista, int tamAvioes);
 void imprimeListaAvioes(listaAviao* lista, int tamAvioes);
 int getIndiceAviao(aviao aux, listaAviao* listaAvioes, int tamAvioes);
-BOOL verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes);
-BOOL obterCoordenadasOrigemDestino(aviao* aux, aeroporto* listaAeroportos, int tamAeroportos);
+int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes);
+coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamAeroportos);
 
 // Funcoes de Controlo da Memoria Partilhada do Avião
 BOOL abreMemoriaPartilhada(listaAviao* aviao);

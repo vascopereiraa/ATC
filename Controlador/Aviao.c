@@ -53,14 +53,14 @@ int getIndiceAviao(aviao aux, listaAviao* listaAvioes, int tamAvioes) {
 	return -1;
 }
 
-BOOL verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes) {
+int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes) {
 
 	//ProxCoord ? Assumindo que a 1º posição está correta devido a verificacao com obterCoordenadasOrigemDestino
 	for (int i = 0; i < tamAeroportos; i++) {
 		if (listaAeroportos[i].localizacao.posX == aux.proxCoord.posX && aux.destino.posX == aux.proxCoord.posX
 			&& listaAeroportos[i].localizacao.posY == aux.proxCoord.posY && aux.destino.posY == aux.proxCoord.posY) {
 			_tprintf(L"\n\nEstá no aeroporto de destino !\n\n");
-			return FALSE;
+			return 1;
 		}
 	}
 
@@ -69,32 +69,19 @@ BOOL verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeropor
 			listaAvioes[i].av.atuais.posY == aux.proxCoord.posY &&
 			listaAvioes->isFree == FALSE && listaAvioes[i].av.procID != aux.procID) {
 			_tprintf(L"\n\nTem avião no mesmo sitio !\n\n");
-			return TRUE;
+			return 2;
 		}
 	}
 	_tprintf(L"\n\nPode avançar\n\n");
-	return FALSE;
+	return 0;
 }
 
-BOOL obterCoordenadasOrigemDestino(aviao * aux, aeroporto * listaAeroportos, int tamAeroportos) {
-	int contador = 0;
-	for (int i = 0; i < tamAeroportos; i++) {
-		if (_tcscmp(listaAeroportos[i].nome, aux->aeroOrigem) == 0) {
-			aux->atuais.posX = listaAeroportos[i].localizacao.posX;
-			aux->atuais.posY = listaAeroportos[i].localizacao.posY;
-			_tprintf(L"Origem x: [%i] y: [%i]", aux->atuais.posX, aux->atuais.posY);
-			_tprintf(L"\nAtribuido aeroporto origem [%s] !\n", listaAeroportos[i].nome);
-			++contador;
+coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamAeroportos) {
+	coordenadas pos = { -1, -1 };
+	for (int i = 0; i < tamAeroportos; ++i)
+		if (!_tcscmp(string, listaAeroportos[i].nome)) {
+			pos = listaAeroportos[i].localizacao;
+			return pos;
 		}
-		if (_tcscmp(listaAeroportos[i].nome, aux->aeroDestino) == 0) {
-			aux->destino.posX = listaAeroportos[i].localizacao.posX;
-			aux->destino.posY = listaAeroportos[i].localizacao.posY;
-			_tprintf(L"Destino x: [%i] y: [%i]", aux->destino.posX, aux->destino.posY);
-			_tprintf(L"\nEstá no aeroporto de destino [%s] !\n", listaAeroportos[i].nome);
-			++contador;
-		}
-		if (contador == 2)
-			return TRUE;
-	}
-	return FALSE;
+	return pos;
 }

@@ -22,7 +22,8 @@ typedef struct {
 	int velocidade;					// Velocidade de posições por segundo
 	coordenadas proxCoord;			// Coordenadas da possivel proxima posicao do aviao
 
-	BOOL terminaExecucao;			// Flag para encerrar o aviao
+	int terminaExecucao;			// Flag para encerrar o aviao
+	BOOL emViagem;					// Flag para verificar que o aviao nao esta parado no aeroporto
 } aviao;
 
 typedef struct {

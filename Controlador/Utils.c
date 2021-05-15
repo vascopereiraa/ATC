@@ -5,11 +5,9 @@
 #include "Utils.h"
 
 void debug(TCHAR* string) {
-
 #ifdef DEBUG
 	_tprintf(L"[DEBUG] %s\n", string);
 #endif
-
 }
 
 void erro(TCHAR* string) {
