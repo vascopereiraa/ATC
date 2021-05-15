@@ -23,8 +23,9 @@ typedef struct {
 	controloBufferCirc bufCirc;
 	memoriaPartilhada memPart;
 	aviao av;
+	BOOL emViagem;
 	BOOL terminaAviao;
-	HANDLE hEventoViagem;
+	HANDLE hMutexAviao;
 } infoAviao;
 
 // Funcoes de Controlo do Buffer Circular
@@ -36,7 +37,7 @@ BOOL criaMemoriaPartilhada(memoriaPartilhada* memPartilhada);
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
 
 // Objetos de sincronização
-void encerraEventoViagem(infoAviao* infoAv);
-BOOL criaEventoViagem(infoAviao* infoAv);
+BOOL criaMutexAviao(HANDLE* hMutexAviao);
+void encerraMutexAviao(HANDLE* hMutexAviao);
 
 #endif // !__MEMORIA_PARTILHADA_H__

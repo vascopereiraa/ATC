@@ -1,5 +1,8 @@
 
+#include <Windows.h>
 #include <tchar.h>
+#include <fcntl.h>
+
 #include "Aviao.h"
 #include "MemoriaPartilhada.h"
 #include "../Controlador/Utils.h"
@@ -88,20 +91,6 @@ BOOL criaMemoriaPartilhada(memoriaPartilhada* memPartilhada) {
 	return TRUE;
 }
 
-BOOL criaEventoViagem(infoAviao* infoAv) {
-	infoAv->hEventoViagem = CreateEvent(NULL, TRUE, FALSE, EVNT_VIAGEM);
-	if (infoAv->hEventoViagem == NULL) {
-		fatal(L"Nao foi possivel criar o evento do avião");
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void encerraEventoViagem(infoAviao* infoAv) {
-	if (infoAv->hEventoViagem != NULL)
-		CloseHandle(infoAv->hEventoViagem);
-}
-
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 
 	if (memPart->pAviao != NULL)
@@ -112,4 +101,18 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 
 	if (memPart->hEvento != NULL)
 		CloseHandle(memPart->hEvento);	
+}
+
+BOOL criaMutexAviao(HANDLE* hMutexAviao) {
+	hMutexAviao = CreateMutex(NULL, FALSE, NULL);
+	if (hMutexAviao == NULL) {
+		fatal(L"Nao foi possivel criar o mutex do avião");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void encerraMutexAviao(HANDLE* hMutexAviao) {
+	if (hMutexAviao != NULL)
+		CloseHandle(hMutexAviao);
 }

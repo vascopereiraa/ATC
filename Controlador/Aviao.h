@@ -1,5 +1,6 @@
-#ifndef __AVIAO_H__
-#define __AVIAO_H__
+
+#ifndef __AVIAO_CONTROLADOR_H__
+#define __AVIAO_CONTROLADOR_H__
 
 #include <Windows.h>
 
@@ -32,5 +33,5 @@ BOOL obterCoordenadasOrigemDestino(aviao* aux, aeroporto* listaAeroportos, int t
 BOOL abreMemoriaPartilhada(listaAviao* aviao);
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart);
 
-#endif // !__AVIAO_H__
+#endif // !__AVIAO_CONTROLADOR_H__
 

@@ -15,7 +15,7 @@
 // Aviao
 #define SHM_AVIAO _TEXT("SHM_%d")
 #define EVNT_AVIAO _TEXT("EVNT_%d")
-#define EVNT_VIAGEM _TEXT("EVNT_VIAGEM")
+#define DLL_LOCATION _TEXT("../../DLL/%s/SO2_TP_DLL_2021.dll")
 
 // Registry
 #define MAX_AIRPORT 20

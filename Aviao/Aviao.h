@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef __AVIAO_H__
+#define __AVIAO_H__
 
 #include <Windows.h>
 #include <tchar.h>
@@ -29,6 +31,4 @@ typedef struct {
 	int numProd;			// Prox. posicao a produzir
 } bufferCircular;
 
-// Funções do avião de comunicação
-// BOOL registaEntrada(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, aviao* av);
-// void comunicaAviao(controloBufferCirc* bufCirc, memoriaPartilhada* memPart, aviao* av);
+#endif // !__AVIAO_H__
