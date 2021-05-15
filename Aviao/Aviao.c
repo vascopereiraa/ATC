@@ -62,16 +62,18 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 
 	int resultado = 0, nextPos = 1;
 	while (!dados->terminaAviao) {
-		// debug(L"Estou a enviar cenas");
+		// debug(L"Estou a enviar cenas")
 		if (av->emViagem) {
 			if (nextPos) {
 				// Calcula proxima posicao -> FUNCAO DLL
 				EnterCriticalSection(&dados->criticalSectionAviao);
-				resultado = move(av->atuais.posX, av->atuais.posY, av->destino.posX, av->destino.posY, 
+				resultado = move((*av).atuais.posX, av->atuais.posY, av->destino.posX, av->destino.posY, 
 					&av->proxCoord.posX, &av->proxCoord.posY);
 				switch (resultado) {
 				case 0:			// Chegou ao destino
 					av->emViagem = FALSE;
+					av->destino.posX = -1;
+					av->destino.posY = -1;
 					_tprintf(L"\nAviao chegou ao destino!\n");
 					break;
 				case 1:
@@ -97,10 +99,10 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 			Sleep(2000);
 
 #ifdef DEBUG
-		/*EnterCriticalSection(&dados->criticalSectionAviao);
+		EnterCriticalSection(&dados->criticalSectionAviao);
 		debug(L"THREAD:");
 		imprimeDadosAviao(&dados->av);
-		LeaveCriticalSection(&dados->criticalSectionAviao);*/
+		LeaveCriticalSection(&dados->criticalSectionAviao);
 #endif
 
 		// Escrever no buffer circular
@@ -115,7 +117,13 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 		WaitForSingleObject(memPart->hEvento, INFINITE);
 
 		// Ler e tratar a resposta do controlador
-		WaitForSingleObject(memPart->hEvento, INFINITE);
+		if (WaitForSingleObject(memPart->hEvento, 7000) == WAIT_TIMEOUT) {
+			// Caso não obtenha resposta do controlador >> Contrl nao abriu memPart
+			erro(L"O Controlador nao conseguiu comunicar de volta!");
+			LeaveCriticalSection(&dados->criticalSectionAviao);
+			libertaDLL(dllLocation);
+			return 3;
+		}
 		
 		// *av = *(memPart->pAviao);
 		CopyMemory(av, memPart->pAviao, sizeof(aviao));
@@ -123,15 +131,17 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 		// Verifica se tem de encerrar
 		if (av->terminaExecucao) {
 			debug(L"Controlador mandou o aviao encerrar");
+			_tprintf(L"Aceitação de novos aviões suspensa no controlador\n");
 			libertaDLL(dllLocation);
 			LeaveCriticalSection(&dados->criticalSectionAviao);
-			return 3;
+			return 4;
 		}
 			
 		// Verifica se a movimentação foi feita com sucesso
 		if (av->emViagem) {
 			nextPos = 1;
-			if (av->proxCoord.posX == -2 && av->proxCoord.posY == -2) {
+			if (av->isSobreposto) {
+				av->isSobreposto = FALSE;
 				debug(L"A posicao pretendida encontrava-se ocupada!");
 				int random = rand() % 101;
 				if (random < 50) {
@@ -147,10 +157,22 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 				}
 			}
 		}
+		else {
+			// O aeroporto origem não existe
+			if (av->atuais.posX == -2 && av->atuais.posY == -2) {
+				erro(L"O aeroporto origem nao existe!");
+				av->terminaExecucao = TRUE;
+				libertaDLL(dllLocation);
+				LeaveCriticalSection(&dados->criticalSectionAviao);
+				return 5;
+			}
+			if (av->destino.posX == -2 && av->destino.posY == -2) {
+				erro(L"O aeroporto destino nao existe!");
+			}
+		}
 		LeaveCriticalSection(&dados->criticalSectionAviao);
 		ResetEvent(memPart->hEvento);
 	}
-	debug(L"Aqui");
 	libertaDLL(dllLocation);
 	return 0;
 }
@@ -189,8 +211,8 @@ void menu(infoAviao* dados) {
 		system("cls");
 #endif
 		EnterCriticalSection(&dados->criticalSectionAviao);
-		debug(L"MENU:");
-		imprimeDadosAviao(&dados->av);
+		//debug(L"MENU:");
+		//imprimeDadosAviao(&dados->av);
 		LeaveCriticalSection(&dados->criticalSectionAviao);
 		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
@@ -253,6 +275,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	infoAv.av.proxCoord.posY = -1;
 	infoAv.av.terminaExecucao = FALSE;
 	infoAv.av.emViagem = FALSE;
+	infoAv.av.isSobreposto = FALSE;
 	_tcscpy_s(infoAv.av.aeroDestino, STR_TAM, L"vazio");
 
 	infoAv.terminaAviao = FALSE;

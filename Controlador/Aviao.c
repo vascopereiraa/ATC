@@ -42,6 +42,17 @@ void imprimeListaAvioes(listaAviao* lista, int tamAvioes) {
 		if (lista[i].isFree == FALSE) {
 			_tprintf(L"Aviao %d:\n", i + 1);
 			_tprintf(L"Nr Avião: %d\n\n", lista[i].av.procID);
+			_tprintf(L"Capacidade: %d\tVelocidade: %d\n", lista[i].av.capMaxima, lista[i].av.velocidade);
+			_tprintf(L"Origem: %s\n", lista[i].av.aeroOrigem);
+			_tprintf(L"x = %d\ty = %d\n", lista[i].av.atuais.posX, lista[i].av.atuais.posY);
+			if (!_tcscmp(lista[i].av.aeroDestino, L"vazio"))
+				_tprintf(L"Destino: SEM DESTINO\n");
+			else
+				_tprintf(L"Destino: %s\n", lista[i].av.aeroDestino);
+			_tprintf(L"x = %d\ty = %d\n", lista[i].av.destino.posX, lista[i].av.destino.posY);
+			_tprintf(L"Prox coord: x = %d\t y = %d\n", lista[i].av.proxCoord.posX, lista[i].av.proxCoord.posY);
+			_tprintf(L"IsSobreposto = %d\n", lista[i].av.isSobreposto);
+			_tprintf(L"\n");
 		}
 	}
 }
@@ -77,7 +88,7 @@ int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroport
 }
 
 coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamAeroportos) {
-	coordenadas pos = { -1, -1 };
+	coordenadas pos = { -2, -2 };
 	for (int i = 0; i < tamAeroportos; ++i)
 		if (!_tcscmp(string, listaAeroportos[i].nome)) {
 			pos = listaAeroportos[i].localizacao;

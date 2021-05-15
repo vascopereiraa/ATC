@@ -66,6 +66,13 @@ int _tmain() {
 	}
 	infoControl.listaAvioes = avioes;
 
+#ifdef TESTES
+	infoControl.listaAvioes[0].isFree = FALSE;
+	infoControl.listaAvioes[0].av.procID = 1;
+	infoControl.listaAvioes[0].av.atuais.posX = 5;
+	infoControl.listaAvioes[0].av.atuais.posY = 5;
+#endif
+
 	// Criar Memoria Partilhada do Controlador
 	controloBufferCirc bufCirc;
 	if (!criaBufferCircular(&bufCirc)) {
