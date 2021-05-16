@@ -96,7 +96,7 @@ BOOL abreMemoriaPartilhada(listaAviao* av) {
 }
 
 void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
-	
+
 	if (memPart->pAviao != NULL)
 		UnmapViewOfFile(memPart->pAviao);
 
@@ -107,11 +107,29 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 		CloseHandle(memPart->hEvento);
 }
 
-
+// Seccao Critica de sincronizacao entre threads e menu
 void criaCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl) {
 	InitializeCriticalSection(lpCriticalSectionControl);
 }
 
 void encerraCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl) {
 	DeleteCriticalSection(lpCriticalSectionControl);
+}
+
+// Termina a execução do controlador
+void encerraControlador(infoControlador* infoControl) {
+	if (infoControl->bufCirc != NULL)
+		encerraBufferCircular(infoControl->bufCirc);
+
+	if (infoControl->listaAvioes != NULL)
+		free(infoControl->listaAvioes);
+
+	if (infoControl->listaAeroportos != NULL)
+		free(infoControl->listaAeroportos);
+
+	if (infoControl->terminaControlador != NULL)
+		free(infoControl->terminaControlador);
+
+	if (infoControl->suspendeNovosAvioes != NULL)
+		free(infoControl->suspendeNovosAvioes);
 }

@@ -34,7 +34,10 @@ int _tmain() {
 	*infoControl.terminaControlador = 0;
 
 	// Carrega dados do Registry
-	controladorRegistry(&infoControl.tamAeroporto, &infoControl.tamAvioes);
+	if (!controladorRegistry(&infoControl.tamAeroporto, &infoControl.tamAvioes)) {
+		encerraControlador(&infoControl);
+		return 1;
+	}
 
 	_tprintf(L"\n\nValores do registry: %d %d\n\n", infoControl.tamAeroporto, infoControl.tamAvioes);
 
@@ -113,90 +116,3 @@ int _tmain() {
 	return 0;
 }
 
-void encerraControlador(infoControlador* infoControl) {
-	if (infoControl->bufCirc != NULL)
-		encerraBufferCircular(infoControl->bufCirc);
-	
-	if (infoControl->listaAvioes != NULL)
-		free(infoControl->listaAvioes);
-	
-	if (infoControl->listaAeroportos != NULL)
-		free(infoControl->listaAeroportos);
-
-	if(infoControl->terminaControlador != NULL)
-		free(infoControl->terminaControlador);
-
-	if (infoControl->suspendeNovosAvioes != NULL)
-		free(infoControl->suspendeNovosAvioes);
-}
-
-void menu(infoControlador* infoControl) {
-	int opcao;
-	TCHAR comando[STR_TAM], comandoAux[STR_TAM];
-	TCHAR* buffer = NULL;
-	TCHAR* token = NULL;
-	
-	/*
-	* aero + nome + coordX + coordY
-	* laero = lista aeroportos
-	* lavioes = lista avioes
-	* susp = suspender comunicações
-	* ret = retomar comunicações
-	* end = terminar controlador
-	*/
-
-	while (!*(infoControl->terminaControlador)) {
-		_tprintf(L"Insira [cmd] para ver os comandos disponiveis\n");
-		_tprintf(L" > ");
-		_fgetts(comando, STR_TAM, stdin);
-		comando[_tcslen(comando) - 1] = '\0';
-		
-		_tcscpy_s(&comandoAux, STR_TAM, comando);
-		token = _tcstok_s(comando, L" ", &buffer);
-		if (!_tcscmp(token, L"aero")) {
-			if (!adicionaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero, comandoAux))
-				_tprintf(L"\nNão foi possivel adicionar o aeroporto à lista\n\n");
-			else
-				_tprintf(L"\nAeroporto adicionado à lista de aeroportos\n\n");
-		}
-		if (!_tcscmp(token, L"laero")) {
-			_tprintf(L"Lista de aeroportos:\n");
-			imprimeListaAeroporto(infoControl->listaAeroportos, infoControl->indiceAero);
-			_tprintf(L"\n");
-		}
-		if (!_tcscmp(token, L"laviao")) {
-			_tprintf(L"Lista de avioes:\n");
-			imprimeListaAvioes(infoControl->listaAvioes, infoControl->tamAvioes);
-			_tprintf(L"\n");
-		}
-		if (!_tcscmp(token, L"susp")) {
-			if (*(infoControl->suspendeNovosAvioes) != 1) {
-				*(infoControl->suspendeNovosAvioes) = 1;
-				_tprintf(L"Aceitação de novos aviões suspendida!\n");
-			}
-			else
-				erro(L"A aceitação de novos aviões já se encontrava suspensa!");
-		}
-		if (!_tcscmp(token, L"ret")) {
-			*(infoControl->suspendeNovosAvioes) = 0;
-			_tprintf(L"Aceitação de novos aviões alterada!\n");
-		}
-		if (!_tcscmp(token, L"end")) {
-			*(infoControl->terminaControlador) = 1;
-		}
-		if (!_tcscmp(token, L"cmd")) {
-			_tprintf(L"aero + nome + coordX + coordY = criar aeroporto\nlaero = lista aeroportos\nlavioes = lista avioes\nsusp = suspender comunicações\n"
-				L"ret = retomar comunicações\nend = terminar controlador\ncmd = comandos disponiveis\n\n");
-		}
-	}
-
-#ifdef TESTES
-	for (int i = 1; i < infoControl->tamAeroporto; ++i) {
-#else
-	for (int i = 0; i < infoControl->tamAeroporto; ++i) {
-#endif
-		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
-		TerminateProcess(hProcess, 1);
-	}
-	
-}

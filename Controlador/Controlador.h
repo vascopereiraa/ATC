@@ -24,9 +24,9 @@ typedef struct {
 		int tamAeroporto;				// Tamanho do array de aeroportos
 		int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
 
-		int* terminaControlador;		// Flag para terminar o controlador
-		int* suspendeNovosAvioes;		// Flag para suspender/aceitar novos avioes
-		CRITICAL_SECTION criticalSectionControl; // Garante sincronização entre threads
+		int* terminaControlador;					// Flag para terminar o controlador
+		int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
+		CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
 	} infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem
@@ -41,9 +41,6 @@ void WINAPI threadControloBuffer(LPVOID lpParam);
 void WINAPI threadTimer(LPVOID lpParam);
 
 // Funcoes - Registry
-HKEY abreOuCriaChave();
-void obtemValoresRegistry(HKEY chave, int* maxAeroportos, int* maxAvioes);
-void criaValoresRegistry(HKEY chave);
 BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes);
 
 // Objetos de sincronização
