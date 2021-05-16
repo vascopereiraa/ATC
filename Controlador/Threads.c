@@ -101,9 +101,6 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 			// Enviar mensagem ao aviao
 			*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
 			SetEvent(listaAvioes[pos].memAviao.hEvento);
-#ifdef DEBUG
-			Sleep(2000);
-#endif
 		}
 	}
 
@@ -118,9 +115,12 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	while (!*(dados->terminaControlador)) {
 		Sleep(3000);
 		EnterCriticalSection(&dados->criticalSectionControl);
+#ifdef TESTES
 		for (int i = 1; i < dados->tamAvioes; i++) {
+#else
+		for (int i = 0; i < dados->tamAvioes; i++) {
+#endif
 			if (listaAvioes[i].isAlive) {
-				debug(L"Estou vivo!");
 				_tprintf(L"Aviao: [%i] está vivo !\n", listaAvioes[i].av.procID);
 				listaAvioes[i].isAlive = FALSE;
 			}
@@ -200,12 +200,15 @@ void menu(infoControlador* infoControl) {
 	}
 
 #ifdef TESTES
-	for (int i = 1; i < infoControl->tamAeroporto; ++i) {
+	for (int i = 1; i < infoControl->tamAvioes; ++i) {
 #else
-	for (int i = 0; i < infoControl->tamAeroporto; ++i) {
+	for (int i = 0; i < infoControl->tamAvioes; ++i) {
 #endif
-		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
-		TerminateProcess(hProcess, 1);
+		if (!infoControl->listaAvioes[i].isFree) {
+			HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
+			encerraMemoriaPartilhada(&infoControl->listaAvioes[i].memAviao);
+			TerminateProcess(hProcess, 1);
+		}
 	}
 
 }

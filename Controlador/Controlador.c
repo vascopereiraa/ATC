@@ -49,7 +49,7 @@ int _tmain() {
 	}
 	infoControl.listaAeroportos = aeroportos;
 
-#ifdef TESTES
+#ifdef DEBUG
 	_tcscpy_s(&infoControl.listaAeroportos[0].nome,STR_TAM, L"porto");
 	infoControl.listaAeroportos[0].localizacao.posX = 0;
 	infoControl.listaAeroportos[0].localizacao.posY = 0;

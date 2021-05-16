@@ -83,20 +83,24 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 					break;
 				}
 			}
-			Sleep(1000 / av->velocidade);	// Aplica a velocidade do aviao em espacos / segundo
-
 #ifdef DEBUG
+			Sleep(3000 / av->velocidade);   // Aplica velocidade mais lenta para maior visibilidade de outputs
 			_tprintf(L"\nAtual x: [%i] Atual y: [%i]\tDestino x: [%i] Destino y: [%i]\tProxima x: [%i] Proxima y: [%i]\n",
 				av->atuais.posX, av->atuais.posY, av->destino.posX, av->destino.posY, av->proxCoord.posX, av->proxCoord.posY);
+#else
+			Sleep(1000 / av->velocidade);	// Aplica a velocidade do aviao em espacos / segundo
 #endif
 			LeaveCriticalSection(&dados->criticalSectionAviao);
 		}
 
 #ifdef DEBUG
-		EnterCriticalSection(&dados->criticalSectionAviao);
-		debug(L"THREAD:");
-		imprimeDadosAviao(&dados->av);
-		LeaveCriticalSection(&dados->criticalSectionAviao);
+		if (av->emViagem) {
+			//Sleep(1500);
+			EnterCriticalSection(&dados->criticalSectionAviao);
+			debug(L"THREAD:");
+			imprimeDadosAviao(&dados->av);
+			LeaveCriticalSection(&dados->criticalSectionAviao);
+		}
 #endif
 
 		// Escrever no buffer circular

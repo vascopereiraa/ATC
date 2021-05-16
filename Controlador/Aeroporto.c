@@ -9,8 +9,9 @@
 #include "Utils.h"
 
 BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const int* indiceAero) {
+
 	for (int i = 0; i < *indiceAero; i++) {
-		if (!(_tcscmp(lista->nome, aux.nome))) {
+		if (!(_tcscmp(lista[i].nome, aux.nome))) {
 			return FALSE;
 		}
 	}

@@ -112,7 +112,7 @@ void menu(infoAviao* dados) {
 	*/
 
 	while (!dados->terminaAviao) {
-
+		_tprintf(L"\n\nInsira [cmd] para ver os comandos disponiveis\n");
 		_tprintf(L" > ");
 		_fgetts(comando, STR_TAM, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
@@ -152,7 +152,12 @@ void menu(infoAviao* dados) {
 			if (!_tcscmp(token, L"info")) {
 				imprimeDadosAviao(&dados->av);
 			}
+			if (!_tcscmp(token, L"cmd")) {
+				_tprintf(L"dest + destino = definir destino\nstart = comecar viagem\n"
+					L"info = informação sobre o avião\nend = terminar avião\n\n");
+			}
 		}
+
 		LeaveCriticalSection(&dados->criticalSectionAviao);
 	}
 }
