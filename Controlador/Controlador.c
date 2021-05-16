@@ -39,7 +39,7 @@ int _tmain() {
 		return 1;
 	}
 
-	_tprintf(L"\n\nValores do registry: %d %d\n\n", infoControl.tamAeroporto, infoControl.tamAvioes);
+	_tprintf(L"\nValores do registry:\n Número máximo de Aeroportos => %d\n Número máximo de Aviões => %d\n", infoControl.tamAeroporto, infoControl.tamAvioes);
 
 	// Inicializa a lista de Aeroportos
 	aeroporto* aeroportos = inicializaListaAeroportos(infoControl.tamAeroporto);
