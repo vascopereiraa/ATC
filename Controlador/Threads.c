@@ -206,8 +206,10 @@ void menu(infoControlador* infoControl) {
 #endif
 		if (!infoControl->listaAvioes[i].isFree) {
 			HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
-			encerraMemoriaPartilhada(&infoControl->listaAvioes[i].memAviao);
-			TerminateProcess(hProcess, 1);
+			if (hProcess != NULL) {
+				encerraMemoriaPartilhada(&infoControl->listaAvioes[i].memAviao);
+				TerminateProcess(hProcess, 1);
+			}
 		}
 	}
 
