@@ -3,7 +3,6 @@
 #include <tchar.h>
 #include <fcntl.h>
 
-#include "Aviao.h"
 #include "MemoriaPartilhada.h"
 #include "../Controlador/Utils.h"
 #include "../Controlador/Constantes.h"
