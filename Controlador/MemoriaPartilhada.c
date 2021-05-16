@@ -106,3 +106,12 @@ void encerraMemoriaPartilhada(memoriaPartilhada* memPart) {
 	if (memPart->hEvento != NULL)
 		CloseHandle(memPart->hEvento);
 }
+
+
+void criaCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl) {
+	InitializeCriticalSection(lpCriticalSectionControl);
+}
+
+void encerraCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl) {
+	DeleteCriticalSection(lpCriticalSectionControl);
+}

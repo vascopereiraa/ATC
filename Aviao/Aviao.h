@@ -8,8 +8,8 @@
 #include "../Controlador/Constantes.h"
 
 typedef struct {
-	int posX;
-	int posY;
+	int posX;	// Coordenada X
+	int posY;	// Coordenada Y
 } coordenadas;
 
 typedef struct {

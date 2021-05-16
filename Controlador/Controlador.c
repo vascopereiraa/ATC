@@ -81,6 +81,8 @@ int _tmain() {
 	}
 	infoControl.bufCirc = &bufCirc;
 
+	criaCriticalSectionControl(&infoControl.criticalSectionControl);
+
 	// Criar a Thread para gerenciar o buffer circular
 	HANDLE hThreadBuffer = CreateThread(NULL, 0, threadControloBuffer, (LPVOID) &infoControl, 0, NULL);
 	if (hThreadBuffer == NULL) {

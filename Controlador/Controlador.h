@@ -9,24 +9,25 @@
 #include "Aeroporto.h"
 
 typedef struct {
-	HANDLE hFileMap;
-	HANDLE hSemItens;
-	HANDLE hSemMutexProd;
-	bufferCircular* pBuf;
+	HANDLE hFileMap;		// Handle para a zona de memória partilhada
+	HANDLE hSemItens;	    // Handle para o semaforo de Itens colocados no buffer
+	HANDLE hSemMutexProd;   // Handle para o semaforo binário usado para sincronização entre aviões
+	bufferCircular* pBuf;   // Ponteiro para a vista partilhada em memória
 } controloBufferCirc;
 
-typedef struct {
-	controloBufferCirc* bufCirc;		// Estrutura de dados do buffer circular
-	listaAviao* listaAvioes;			// Array de avioes
-	aeroporto* listaAeroportos;		// Array de aeroportos
+	typedef struct {
+		controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
+		listaAviao* listaAvioes;		// Array de avioes
+		aeroporto* listaAeroportos;		// Array de aeroportos
 
-	int tamAvioes;					// Tamanho do array de avioes
-	int tamAeroporto;				// Tamanho do array de aeroportos
-	int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
+		int tamAvioes;					// Tamanho do array de avioes
+		int tamAeroporto;				// Tamanho do array de aeroportos
+		int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
 
-	int* terminaControlador;		// Flag para terminar o controlador
-	int* suspendeNovosAvioes;		// Flag para suspender/aceitar novos avioes
-} infoControlador;
+		int* terminaControlador;		// Flag para terminar o controlador
+		int* suspendeNovosAvioes;		// Flag para suspender/aceitar novos avioes
+		CRITICAL_SECTION criticalSectionControl; // Garante sincronização entre threads
+	} infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem
 BOOL criaBufferCircular(controloBufferCirc* bufCirc);
@@ -44,5 +45,9 @@ HKEY abreOuCriaChave();
 void obtemValoresRegistry(HKEY chave, int* maxAeroportos, int* maxAvioes);
 void criaValoresRegistry(HKEY chave);
 BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes);
+
+// Objetos de sincronização
+void criaCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl);
+void encerraCriticalSectionControl(LPCRITICAL_SECTION lpCriticalSectionControl);
 
 #endif // !__CONTROLADOR_H__

@@ -6,10 +6,10 @@
 #include "../Aviao/Aviao.h"
 #include "Constantes.h"
 
-typedef struct {
-	TCHAR nome[STR_TAM];
-	coordenadas localizacao;
-} aeroporto;
+	typedef struct {
+		TCHAR nome[STR_TAM];	   // Nome do aeroporto
+		coordenadas localizacao;   // Coordenadas do aeroporto
+	} aeroporto;
 
 // Funcoes de controlo dos aeroportos
 BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const int* indiceAero);

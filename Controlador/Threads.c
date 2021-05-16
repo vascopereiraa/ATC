@@ -22,13 +22,13 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	int pos = 0;
 	aviao aux;
 	while (!*(dados->terminaControlador)) {
-
 		// Ler o buffer Circular
 		if (WaitForSingleObject(bufCirc->hSemItens, 5000) == WAIT_OBJECT_0) {
 			aux = bufCirc->pBuf->buf[bufCirc->pBuf->numCons];
 			bufCirc->pBuf->numCons = (bufCirc->pBuf->numCons + 1) % MAX_BUF;
 
 			// Regista aviao OU obtem a sua pos no array
+			EnterCriticalSection(&dados->criticalSectionControl);
 			if (isNovoAviao(aux, listaAvioes, tamAvioes)) {
 				pos = getPrimeiraPosVazia(listaAvioes, tamAvioes);
 				if (pos > -1) {
@@ -54,6 +54,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 					listaAvioes[pos].isAlive = TRUE;
 				}
 			}
+			LeaveCriticalSection(&dados->criticalSectionControl);
 
 			// Trata dados avioes
 			if (listaAvioes[pos].av.terminaExecucao == FALSE) {
@@ -116,6 +117,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	
 	while (!*(dados->terminaControlador)) {
 		Sleep(3000);
+		EnterCriticalSection(&dados->criticalSectionControl);
 		for (int i = 1; i < dados->tamAvioes; i++) {
 			if (listaAvioes[i].isAlive) {
 				debug(L"Estou vivo!");
@@ -125,6 +127,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			else
 				listaAvioes[i].isFree = TRUE;
 		}
+		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
 
 	debug(L"Terminei - ThreadTimer");
