@@ -161,6 +161,7 @@ void menu(infoControlador* infoControl) {
 		_tcscpy_s(&comandoAux, STR_TAM, comando);
 		token = _tcstok_s(comando, L" ", &buffer);
 		if (token != NULL) {
+			EnterCriticalSection(&infoControl->criticalSectionControl);
 			if (!_tcscmp(token, L"aero")) {
 				if (!adicionaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero, comandoAux))
 					_tprintf(L"\nNão foi possivel adicionar o aeroporto à lista\n\n");
@@ -196,6 +197,7 @@ void menu(infoControlador* infoControl) {
 				_tprintf(L"aero + nome + coordX + coordY = criar aeroporto\nlaero = lista aeroportos\nlavioes = lista avioes\nsusp = suspender comunicações\n"
 					L"ret = retomar comunicações\nend = terminar controlador\ncmd = comandos disponiveis\n\n");
 			}
+			LeaveCriticalSection(&infoControl->criticalSectionControl);
 		}
 	}
 
