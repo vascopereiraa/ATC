@@ -54,7 +54,6 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 					listaAvioes[pos].isAlive = TRUE;
 				}
 			}
-			LeaveCriticalSection(&dados->criticalSectionControl);
 
 			// Trata dados avioes
 			if (listaAvioes[pos].av.terminaExecucao == FALSE) {
@@ -101,6 +100,8 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 			// Enviar mensagem ao aviao
 			*(listaAvioes[pos].memAviao.pAviao) = listaAvioes[pos].av;
 			SetEvent(listaAvioes[pos].memAviao.hEvento);
+
+			LeaveCriticalSection(&dados->criticalSectionControl);
 		}
 	}
 
