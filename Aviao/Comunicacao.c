@@ -112,7 +112,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 
 		ReleaseSemaphore(bufCirc->hSemMutexProd, 1, NULL);
 		ReleaseSemaphore(bufCirc->hSemItens, 1, NULL);
-		WaitForSingleObject(memPart->hEvento, INFINITE);
+		// WaitForSingleObject(memPart->hEvento, INFINITE);
 
 		// Ler e tratar a resposta do controlador
 		if (WaitForSingleObject(memPart->hEvento, 7000) == WAIT_TIMEOUT) {
