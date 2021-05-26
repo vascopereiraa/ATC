@@ -9,8 +9,10 @@
 #define SHM_CONTROL _TEXT("SHM_CONTROL")
 #define SEM_MUTEX_PROD _TEXT("SEM_MUTEX_CONS")
 #define SEM_ITENS _TEXT("SEM_ITENS")
+#define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 #define MAX_BUF 100
 #define STR_TAM 80
+#define INSTANCES 5
 
 // Aviao
 #define SHM_AVIAO _TEXT("SHM_%d")

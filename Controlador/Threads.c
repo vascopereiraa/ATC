@@ -3,11 +3,55 @@
 #include <tchar.h>
 #include <fcntl.h>
 
+#define CONNECTING_STATE 0 
+#define READING_STATE 1 
+#define WRITING_STATE 2 
 #include "../Aviao/Aviao.h"
 #include "Controlador.h"
 #include "Aviao.h"
 #include "Aeroporto.h"
 #include "Utils.h"
+#include "../Passageiro/Passageiro.h"
+
+BOOL ConnectToNewClient(HANDLE hPipe, LPOVERLAPPED lpo)
+{
+	BOOL fConnected, fPendingIO = FALSE;
+
+	// Start an overlapped connection for this pipe instance. 
+	fConnected = ConnectNamedPipe(hPipe, lpo);
+
+	// Overlapped ConnectNamedPipe should return zero. 
+	if (fConnected)
+	{
+		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
+		return 0;
+	}
+
+	switch (GetLastError())
+	{
+		// The overlapped connection in progress. 
+	case ERROR_IO_PENDING:
+		fPendingIO = TRUE;
+		break;
+
+		// Client is already connected, so signal an event. 
+
+	case ERROR_PIPE_CONNECTED:
+		if (SetEvent(lpo->hEvent))
+			break;
+
+		// If an error occurs during the connect operation... 
+	default:
+	{
+		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
+		return 0;
+	}
+	}
+
+	return fPendingIO;
+}
+
+//void WINAPI threadLeitorNamedPipes(LPVOID);
 
 void WINAPI threadControloBuffer(LPVOID lpParam) {
 
@@ -137,6 +181,256 @@ void WINAPI threadTimer(LPVOID lpParam) {
 
 	debug(L"Terminei - ThreadTimer");
 }
+
+void WINAPI threadNamedPipes(LPVOID lpParam) {
+	ArrayNamedPipes* arrNamedPipes = (ArrayNamedPipes*)lpParam;
+	DWORD iResult, totalBytes;
+	int indice;
+	TCHAR buf[STR_TAM] = _TEXT("");
+	HANDLE hPipeTemp = NULL;
+	HANDLE hThread = NULL;
+	HANDLE hEventTemp = NULL;
+
+
+	// Criação de todos os pipes possíveis a vir a existir
+	for (int i = 0; i < INSTANCES; i++) {
+		_tprintf(L"[ESCRITOR] A criar cópia do pipe [%s] .. (CreateNamedPipe)\n", PIPE_NAME);
+
+		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
+		if (hEventTemp == NULL) {
+			_tprintf(L"[ERRO] Criação do evento! (CreateEvent)\n");
+		}
+
+		hPipeTemp = CreateNamedPipe(PIPE_NAME,
+			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+			PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
+			PIPE_UNLIMITED_INSTANCES,
+			sizeof(passageiro), 
+			sizeof(passageiro), 
+			1000, 
+			NULL);
+
+		if (hPipeTemp == INVALID_HANDLE_VALUE) {
+			_tprintf(TEXT("[ERRO] Criar Named Pipe! (CreateNamedPipe)\n"));
+			break;
+		}
+
+		ZeroMemory(&arrNamedPipes->hPipes[i], sizeof(arrNamedPipes->hPipes[i]));
+		arrNamedPipes->hEvents[i] = hEventTemp;
+		arrNamedPipes->hPipes[i].hPipeInst = hPipeTemp;
+		arrNamedPipes->hPipes[i].oOverLap.hEvent = arrNamedPipes->hEvents[i];
+
+		// Call the subroutine to connect to the new client
+
+		arrNamedPipes->hPipes[i].fPendingIO = ConnectToNewClient(
+			arrNamedPipes->hPipes[i].hPipeInst,
+			&arrNamedPipes->hPipes[i].oOverLap);
+
+		arrNamedPipes->hPipes[i].dwState = arrNamedPipes->hPipes[i].fPendingIO ?
+											CONNECTING_STATE : // still connecting 
+											READING_STATE;     // ready to read 
+	}
+
+	/*hThread = CreateThread(NULL, 0, threadLeitorNamedPipes, &arrNamedPipes, 0, NULL);
+	if (hThread == NULL) {
+		_tprintf(TEXT("[ERRO] Criar a Thread para ler do namedPipe! !\n"));
+		return -1;
+	}*/
+
+	/*
+	ResetEvent(arrData.hEvents[indice]);
+
+            WaitForSingleObject(arrData.hMutex, INFINITE);
+            arrData.hPipes[indice].ativo = TRUE;
+            arrData.numClientes++;
+            ReleaseMutex(arrData.hMutex);
+	*/
+
+	// Aguardar ligação nova, e atribuir pipe a esse leitor
+	//while (!arrNamedPipes->terminar && arrNamedPipes->numPassag < INSTANCES) {
+	BOOL fSuccess;
+	passageiro passagAux;
+	ZeroMemory(&passagAux, sizeof(passageiro));
+	while (1) {
+		_tprintf(L"[ESCRITOR] Esperando ligação de um Passageiro. \n");
+		// Está a espera que seja aberto nova instancia de pipe
+		iResult = WaitForMultipleObjects(INSTANCES, arrNamedPipes->hEvents, FALSE, INFINITE);
+		indice = iResult - WAIT_OBJECT_0;
+		// Reset
+		ResetEvent(arrNamedPipes->hEvents[indice]);
+		_tprintf(L"[ESCRITOR] Evento acionado nr: [%i] \n", indice);
+		if (indice < 0 || indice > (INSTANCES - 1) )
+		{
+			_tprintf(L"Index fora do range! \n");
+			return 0;
+		}
+		if (arrNamedPipes->hPipes[indice].fPendingIO) {
+			fSuccess = GetOverlappedResult(arrNamedPipes->hPipes[indice].hPipeInst,&arrNamedPipes->hPipes[indice].oOverLap,&totalBytes,FALSE);
+			switch (arrNamedPipes->hPipes[indice].dwState) {
+					// Aguardar conexão ainda
+				case CONNECTING_STATE:
+					if (!fSuccess)
+					{
+						_tprintf(L"Error %d.\n", GetLastError());
+						return 0;
+					}
+					_tprintf(L"\n\n1º switch: CONNECTING_STATE!! ADICIONAR A LISTA AQUI!\n");
+					arrNamedPipes->hPipes[indice].dwState = READING_STATE;
+					break;
+				// Pending read operation 
+				case READING_STATE:
+					if (!fSuccess || totalBytes == 0)
+					{
+						_tprintf(L"[ERROR] Reading\n");
+						continue;
+					}
+					_tprintf(L"\n\n1º switch: READING_STATE!!!\n\n");
+					//arrNamedPipes->hPipes[indice].dwState = WRITING_STATE;
+					arrNamedPipes->hPipes[indice].dwState = READING_STATE;
+					break;
+					// Pending write operation 
+				//case WRITING_STATE:
+				//	if (!fSuccess /*|| totalBytes != Pipe[i].cbToWrite*/)
+				//	{
+				//		_tprintf(L"[ERROR] Writting\n");
+				//		continue;
+				//	}
+				//	_tprintf(L"\n\n1º switch: WRITING_STATE!!!\n\n");
+				//	//arrNamedPipes->hPipes[indice].dwState = READING_STATE;
+				//	arrNamedPipes->hPipes[indice].dwState = WRITING_STATE;
+				//	break;
+				default:
+					_tprintf(L"Invalid pipe state.\n");
+					return 0;
+			}
+			// The pipe state determines which operation to do next. 
+			switch (arrNamedPipes->hPipes[indice].dwState)
+			{
+			case READING_STATE:
+				fSuccess = ReadFile(arrNamedPipes->hPipes[indice].hPipeInst,&passagAux,sizeof(passageiro),&totalBytes,&arrNamedPipes->hPipes[indice].oOverLap);
+				_tprintf(L"\n\n2º switch: READING_STATE!!!  [%s]\n\n",passagAux.fraseTeste);
+				// The read operation completed successfully. 
+
+				if (fSuccess && totalBytes != 0)
+				{
+					arrNamedPipes->hPipes[indice].fPendingIO = FALSE;
+					arrNamedPipes->hPipes[indice].dwState = WRITING_STATE;
+					continue;
+				}
+				// The read operation is still pending. 
+				DWORD dwErr = GetLastError();
+				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+				{
+					arrNamedPipes->hPipes[indice].fPendingIO = TRUE;
+					continue;
+				}
+				break;
+			/*case WRITING_STATE:
+				//GetAnswerToRequest(&arrNamedPipes->hPipes[indice]);
+
+				fSuccess = WriteFile(
+					arrNamedPipes->hPipes[indice].hPipeInst,
+					&passagAux,
+					sizeof(passageiro),
+					&totalBytes,
+					&arrNamedPipes->hPipes[indice].oOverLap);
+				_tprintf(L"\n\n2º switch: WRITING_STATE[%s]\n\n", passagAux.fraseTeste);
+				// The write operation completed successfully. 
+
+				if (fSuccess && totalBytes == sizeof(passageiro))
+				{
+					arrNamedPipes->hPipes[indice].fPendingIO = FALSE;
+					arrNamedPipes->hPipes[indice].dwState = READING_STATE;
+					continue;
+				}
+
+				// The write operation is still pending. 
+
+				dwErr = GetLastError();
+				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+				{
+					arrNamedPipes->hPipes[indice].fPendingIO = TRUE;
+					continue;
+				}
+
+				// An error occurred; disconnect from the client. 
+
+				//DisconnectAndReconnect(i);
+				break;
+				*/
+				default:
+					_tprintf(L"Invalid pipe state.\n");
+					return 0;
+			}
+		}
+	}
+
+
+	// Aguarda termino da thread
+	WaitForSingleObject(hThread, INFINITE);
+	_tprintf(TEXT("[CONTROL] Desligar os pipes (DisconnectNamedPipe)\n"));
+	// Disconecta de todos os pipes
+	for (int i = 0; i < arrNamedPipes->numPassag; i++) {
+		if (!DisconnectNamedPipe(arrNamedPipes->hPipes[i].hPipeInst)) {
+			_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
+			return -1;
+		}
+		CloseHandle(arrNamedPipes->hPipes[i].hPipeInst);
+		CloseHandle(arrNamedPipes->hEvents[i]);
+	}
+}
+
+/*
+void WINAPI threadLeitorNamedPipes(LPVOID lpParam) {
+	ArrayNamedPipes* arrNamedPipes = (ArrayNamedPipes*)lpParam;
+	//passageiro* passagExistentes = arrNamedPipes->arrPassag;
+	BOOL ret = FALSE;
+	DWORD numBytesLidos, iResult;
+	passageiro passagAux;
+	int indice;
+
+	_tprintf(TEXT("[CONTROL] Liguei-me...\n"));
+	while (1) {
+	_tprintf(TEXT("TESTEEEEE   2...\n"));
+
+	//iResult = WaitForMultipleObjects(INSTANCES, arrNamedPipes->hEvents, FALSE, INFINITE);
+	//indice = iResult - WAIT_OBJECT_0;
+	
+	//_tprintf(L"\n\nIndice: %d", indice);
+
+	ret = ReadFile(arrNamedPipes->hmainPipe, &passagAux, sizeof(passageiro), &numBytesLidos, NULL);
+		// Verifica qual é o passageiro
+		boolean isNovo = TRUE;
+		int pos = 0;
+	_tprintf(TEXT("TESTEEEEE   3...\n"));
+		for (int i = 0; i < arrNamedPipes->numPassag; i++) {
+			// Verifica se passageiro já existe ou não
+			if (arrNamedPipes->arrPassag[i].idPassag == passagAux.idPassag) {
+	_tprintf(TEXT("TESTEEEEE   4...\n"));
+				pos = i;
+				isNovo = FALSE;
+				break;
+			}
+		}
+	_tprintf(TEXT("TESTEEEEE   5...\n"));
+		// Se for passageiro novo insere a lista de passageiros
+		if (isNovo) {
+			arrNamedPipes->arrPassag[arrNamedPipes->numPassag] = passagAux;
+			++(arrNamedPipes->numPassag);
+		}
+
+	_tprintf(TEXT("TESTEEEEE   6...\n"));
+		
+		if (!ret || !numBytesLidos) {
+			_tprintf(TEXT("[CONTROL] %d %d... nome: [%s] msg:[%s] (ReadFile)\n"), ret, numBytesLidos, passagAux.nomePassag, passagAux.fraseTeste);
+			break;
+		}
+	_tprintf(TEXT("TESTEEEEE   7...\n"));
+		_tprintf(TEXT("[CONTROL] Recebi %d bytes: {nome: '%s' msg: '%s'}(ReadFile)\n"), numBytesLidos, passagAux.nomePassag,passagAux.fraseTeste);
+	}
+	CloseHandle(arrNamedPipes->hmainPipe);
+}
+*/
 
 void menu(infoControlador* infoControl) {
 	int opcao;

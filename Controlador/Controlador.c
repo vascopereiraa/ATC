@@ -6,6 +6,11 @@
 #include "Controlador.h"
 #include "Utils.h"
 #include "Constantes.h"
+#include "../Passageiro/Passageiro.h"
+
+/* PIPES
+
+*/
 
 int _tmain() {
 
@@ -14,6 +19,26 @@ int _tmain() {
 	(void) _setmode(_fileno(stdout), _O_WTEXT);
 	(void) _setmode(_fileno(stderr), _O_WTEXT);
 #endif
+
+	// Pipes
+	ArrayNamedPipes arrayPipes;
+	ZeroMemory(&arrayPipes, sizeof(ArrayNamedPipes));
+	arrayPipes.hMutex = NULL;
+	arrayPipes.numPassag = 0;
+	arrayPipes.terminar = 0;
+	// Mudar numero de passageiros
+	/*(arrayPipes.arrPassag) = (passageiro*)malloc(sizeof(passageiro) * 10);
+	if (arrayPipes.arrPassag == NULL) {
+		fatal(L"Não foi possível criar a lista de passageiros");
+		return NULL;
+	}*/
+
+	arrayPipes.hMutex = CreateMutex(NULL, FALSE, NULL);
+	if (arrayPipes.hMutex == NULL) {
+		_tprintf(TEXT("[ERRO] Criar o Mutex do namedPipe !\n"));
+		return -1;
+	}
+	// Pipes
 
 	infoControlador infoControl;
 	ZeroMemory(&infoControl, sizeof(infoControlador));
@@ -102,6 +127,18 @@ int _tmain() {
 		encerraControlador(&infoControl);
 		return 1;
 	}
+
+
+	// Pipes
+	HANDLE hThreadNamedPipes = CreateThread(NULL, 0, threadNamedPipes, (LPVOID)&arrayPipes, 0, NULL);
+	if (hThreadTimer == NULL) {
+		*infoControl.terminaControlador = 1;
+		WaitForSingleObject(hThreadBuffer, INFINITE);
+		CloseHandle(hThreadBuffer);
+		encerraControlador(&infoControl);
+		return 1;
+	}
+	// Pipes
 
 	// Abre e executa o menu de utilizador
 	menu(&infoControl);

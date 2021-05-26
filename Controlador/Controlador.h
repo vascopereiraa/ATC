@@ -7,6 +7,7 @@
 #include "../Aviao/Aviao.h"
 #include "Aviao.h"
 #include "Aeroporto.h"
+#include "../Passageiro/Passageiro.h"
 
 typedef struct {
 	HANDLE hFileMap;		// Handle para a zona de memória partilhada
@@ -15,19 +16,40 @@ typedef struct {
 	bufferCircular* pBuf;   // Ponteiro para a vista partilhada em memória
 } controloBufferCirc;
 
-	typedef struct {
-		controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
-		listaAviao* listaAvioes;		// Array de avioes
-		aeroporto* listaAeroportos;		// Array de aeroportos
 
-		int tamAvioes;					// Tamanho do array de avioes
-		int tamAeroporto;				// Tamanho do array de aeroportos
-		int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
+// NAMED PIPES
+typedef struct {
+	OVERLAPPED oOverLap;
+	HANDLE hPipeInst;
+	BOOL ativo;
+	BOOL fPendingIO;
+	DWORD dwState;
+} PIPESTRUCT, * LPPIPEINST;
 
-		int* terminaControlador;					// Flag para terminar o controlador
-		int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
-		CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
-	} infoControlador;
+typedef struct {
+	HANDLE hEvents[INSTANCES];
+	PIPESTRUCT hPipes[INSTANCES];
+	passageiro arrPassag[INSTANCES];
+	HANDLE hMutex;
+	HANDLE hmainPipe;
+	int numPassag;
+	int terminar;
+} ArrayNamedPipes;
+//
+
+typedef struct {
+	controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
+	listaAviao* listaAvioes;		// Array de avioes
+	aeroporto* listaAeroportos;		// Array de aeroportos
+
+	int tamAvioes;					// Tamanho do array de avioes
+	int tamAeroporto;				// Tamanho do array de aeroportos
+	int indiceAero;					// Indice da proxima posicao livre no array de aeroportos
+
+	int* terminaControlador;					// Flag para terminar o controlador
+	int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
+	CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
+} infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem
 BOOL criaBufferCircular(controloBufferCirc* bufCirc);
@@ -39,6 +61,7 @@ void menu(infoControlador* infoControl);
 // Threads do controlador
 void WINAPI threadControloBuffer(LPVOID lpParam);
 void WINAPI threadTimer(LPVOID lpParam);
+void WINAPI threadNamedPipes(LPVOID lpParam);
 
 // Funcoes - Registry
 BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes);

@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Controlador", "Controlador\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Aviao", "Aviao\Aviao.vcxproj", "{CE99D9BE-8D2F-41A4-B5AF-8E2EB2850F4D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Passageiro", "Passageiro\Passageiro.vcxproj", "{4A9681D7-C47E-41FB-82AC-89E49635FD4A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{CE99D9BE-8D2F-41A4-B5AF-8E2EB2850F4D}.Release|x64.Build.0 = Release|x64
 		{CE99D9BE-8D2F-41A4-B5AF-8E2EB2850F4D}.Release|x86.ActiveCfg = Release|Win32
 		{CE99D9BE-8D2F-41A4-B5AF-8E2EB2850F4D}.Release|x86.Build.0 = Release|Win32
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Debug|x64.ActiveCfg = Debug|x64
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Debug|x64.Build.0 = Debug|x64
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Debug|x86.ActiveCfg = Debug|Win32
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Debug|x86.Build.0 = Debug|Win32
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Release|x64.ActiveCfg = Release|x64
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Release|x64.Build.0 = Release|x64
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Release|x86.ActiveCfg = Release|Win32
+		{4A9681D7-C47E-41FB-82AC-89E49635FD4A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
