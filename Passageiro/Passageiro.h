@@ -5,15 +5,18 @@
 #include "../Controlador/Aviao.h"
 
 typedef struct {
-	TCHAR aeroOrigem[STR_TAM];
-	TCHAR aeroDestino[STR_TAM];
-	// Colocar o avião ? Maybe
-	coordenadas atuais;
 	int idPassag;
 	TCHAR nomePassag[STR_TAM];
+	TCHAR aeroOrigem[STR_TAM];
+	TCHAR aeroDestino[STR_TAM];
+	coordenadas atuais;
 	int tempoEspera;
-	HANDLE hPipe;
+	int sair;	// 1-> Não existe o aero de origem! 
 
+	HANDLE hPipe; // Handle pipe
 	// teste
-	TCHAR fraseTeste[STR_TAM];
+	TCHAR fraseInfo[STR_TAM];
+	int indicePipe; // Indice do pipe para o control poder aceder a posição correta no array de instancias
+	int nrAviao;
+	int contadorTeste;
 } passageiro;

@@ -92,6 +92,8 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 #endif
 			LeaveCriticalSection(&dados->criticalSectionAviao);
 		}
+		else
+			Sleep(2000); // Para enviar mensagem a indicar que está vivo a cada 2seg.
 
 #ifdef DEBUG
 		if (av->emViagem) {

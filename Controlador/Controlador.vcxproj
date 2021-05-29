@@ -146,6 +146,7 @@
     <ClCompile Include="Aviao.c" />
     <ClCompile Include="Controlador.c" />
     <ClCompile Include="MemoriaPartilhada.c" />
+    <ClCompile Include="Passageiro.c" />
     <ClCompile Include="Registry.c" />
     <ClCompile Include="Threads.c" />
     <ClCompile Include="Utils.c" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Aviao.h" />
     <ClInclude Include="Constantes.h" />
     <ClInclude Include="Controlador.h" />
+    <ClInclude Include="Passageiro.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

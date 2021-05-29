@@ -7,7 +7,7 @@
 #include "../Aviao/Aviao.h"
 #include "Aviao.h"
 #include "Aeroporto.h"
-#include "../Passageiro/Passageiro.h"
+#include "Passageiro.h"
 
 typedef struct {
 	HANDLE hFileMap;		// Handle para a zona de memória partilhada
@@ -16,28 +16,8 @@ typedef struct {
 	bufferCircular* pBuf;   // Ponteiro para a vista partilhada em memória
 } controloBufferCirc;
 
-
-// NAMED PIPES
 typedef struct {
-	OVERLAPPED oOverLap;
-	HANDLE hPipeInst;
-	BOOL ativo;
-	BOOL fPendingIO;
-	DWORD dwState;
-} PIPESTRUCT, * LPPIPEINST;
-
-typedef struct {
-	HANDLE hEvents[INSTANCES];
-	PIPESTRUCT hPipes[INSTANCES];
-	passageiro arrPassag[INSTANCES];
-	HANDLE hMutex;
-	HANDLE hmainPipe;
-	int numPassag;
-	int terminar;
-} ArrayNamedPipes;
-//
-
-typedef struct {
+	InfoPassagPipes* infoPassagPipes;
 	controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
 	listaAviao* listaAvioes;		// Array de avioes
 	aeroporto* listaAeroportos;		// Array de aeroportos

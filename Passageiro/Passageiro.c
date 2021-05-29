@@ -3,8 +3,7 @@
 #include <tchar.h>
 #include <fcntl.h> 
 #include "Passageiro.h"
-
-#define PIPE_NAME TEXT("\\\\.\\pipe\\teste") 
+#include "../Controlador/Constantes.h"
 #define MSGTEXT_SZ 256
 
 DWORD WINAPI ThreadEscritor(LPVOID);
@@ -20,6 +19,7 @@ int _tmain(int argc, LPTSTR argv[]) {
     _tcscpy_s(&passag.aeroOrigem, STR_TAM, L"porto");
     _tcscpy_s(&passag.aeroDestino, STR_TAM, L"lisboa");
     _tcscpy_s(&passag.nomePassag, STR_TAM, L"joao");
+    _tcscpy_s(&passag.fraseInfo, STR_TAM, L"frase teste");
     passag.idPassag = GetCurrentProcessId();
     passag.atuais.posX = -1;
     passag.atuais.posY = -1;
@@ -55,26 +55,43 @@ int _tmain(int argc, LPTSTR argv[]) {
         return -1;
     }
 
-
-    // Possível mutex para escrita ? visto control e passa escrreverem no pipe
-    /*if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
+    // Escrita no pipe para informar controlador sobre a sua existência com envio da sua estrutura
+    if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
-    }*/
+    }
+
+    
 
     // Criar thread para escrever no pipe para terminar
     while (1) {
-        _tprintf(L"Vou ficar preso lol\n");
         ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
-        //buf[numBytesLidos / sizeof(TCHAR)] = '\0';
-
         if (!ret || !numBytesLidos) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
             break;
         }
 
-        _tprintf(TEXT("[LEITOR] Recebi %d bytes: '%s'... (ReadFile)\n"), numBytesLidos, buf);
+        if(passag.sair == 1){
+            _tprintf(L"Não existe o aeroporto de Origem!\n");
+            //TerminateThread(hThread,NULL);
+            //CloseHandle(passag.hPipe);
+            //return 0;
+        }
+        if (passag.sair == 2) {
+            _tprintf(L"Não existe o aeroporto de Destino!\n");
+            //TerminateThread(hThread, NULL);
+            //CloseHandle(passag.hPipe);
+            //return 0;
+        }
+        if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
+            _tprintf(L"Passageiro vai embarcar no avião %d", passag.nrAviao);
+        }
+
+        _tprintf(TEXT("[LEITOR] Recebi %d bytes... (ReadFile)\n"), numBytesLidos);
+        _tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
+
     }
+
     CloseHandle(passag.hPipe);
     Sleep(200);
     return 0;
@@ -87,27 +104,14 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
 
     do {
         _tprintf(TEXT("[ESCRITOR] Frase: "));
-        _fgetts(passag->fraseTeste, STR_TAM, stdin);
-        passag->fraseTeste[_tcslen(passag->fraseTeste) - 1] = '\0';
+        _fgetts(passag->fraseInfo, STR_TAM, stdin);
+        passag->fraseInfo[_tcslen(passag->fraseInfo) - 1] = '\0';
+        
+        _tprintf(L"Estou a funcionar colega ! Se escreveu fim, fodi-me\n");
+
+    } while (_tcscmp(passag->fraseInfo, TEXT("fim")));
 
 
-        //DWORD dwMode = PIPE_READMODE_MESSAGE;
-        //SetNamedPipeHandleState(
-        //    passag->hPipe,    // pipe handle 
-        //    &dwMode,  // new pipe mode 
-        //    NULL,     // don't set maximum bytes 
-        //    NULL);    // don't set maximum time 
-
-        _tprintf(L"Entrei 1!!!");
-
-        //WaitForSingleObject(pArrData->hMutex, INFINITE);
-        WriteFile(passag->hPipe, passag, sizeof(passageiro), &n, NULL);
-
-        //ReleaseMutex(pArrData->hMutex);
-    _tprintf(L"Entrei 4!!!");
-    } while (_tcscmp(passag->fraseTeste, TEXT("fim")));
-
-    //pArrData->terminar = 1;
-
+    //DisconnectNamedPipe(passag->hPipe);
     return 0;
 }

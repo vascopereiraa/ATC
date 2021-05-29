@@ -25,6 +25,7 @@ typedef struct {
 	int terminaExecucao;			// Flag para encerrar o aviao
 	BOOL emViagem;					// Flag para verificar que o aviao nao esta parado no aeroporto
 	BOOL isSobreposto;				// Avioes sobrepostos
+	BOOL embarcaPassag;
 } aviao;
 
 typedef struct {

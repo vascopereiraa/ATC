@@ -36,6 +36,9 @@
     <ClCompile Include="Threads.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Passageiro.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aviao.h">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Constantes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Passageiro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -34,6 +34,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	infoAv.av.terminaExecucao = FALSE;
 	infoAv.av.emViagem = FALSE;
 	infoAv.av.isSobreposto = FALSE;
+	infoAv.av.embarcaPassag = FALSE;
 	_tcscpy_s(infoAv.av.aeroDestino, STR_TAM, L"vazio");
 
 	infoAv.terminaAviao = FALSE;
@@ -142,6 +143,13 @@ void menu(infoAviao* dados) {
 					_tprintf(L"Tem que inserir um destino válido!");
 				else {
 					dados->av.emViagem = TRUE;
+				}
+			}
+			if (!_tcscmp(token, L"embarca")) {
+				if (!_tcscmp(dados->av.aeroDestino, L"vazio"))
+					_tprintf(L"Tem que inserir um destino válido!");
+				else {
+					dados->av.embarcaPassag = TRUE;
 				}
 			}
 			if (!_tcscmp(token, L"end")) {

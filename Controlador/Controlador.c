@@ -20,29 +20,16 @@ int _tmain() {
 	(void) _setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-	// Pipes
-	ArrayNamedPipes arrayPipes;
-	ZeroMemory(&arrayPipes, sizeof(ArrayNamedPipes));
-	arrayPipes.hMutex = NULL;
-	arrayPipes.numPassag = 0;
-	arrayPipes.terminar = 0;
-	// Mudar numero de passageiros
-	/*(arrayPipes.arrPassag) = (passageiro*)malloc(sizeof(passageiro) * 10);
-	if (arrayPipes.arrPassag == NULL) {
-		fatal(L"Não foi possível criar a lista de passageiros");
-		return NULL;
-	}*/
-
-	arrayPipes.hMutex = CreateMutex(NULL, FALSE, NULL);
-	if (arrayPipes.hMutex == NULL) {
-		_tprintf(TEXT("[ERRO] Criar o Mutex do namedPipe !\n"));
-		return -1;
-	}
-	// Pipes
-
 	infoControlador infoControl;
 	ZeroMemory(&infoControl, sizeof(infoControlador));
-	
+
+	// Inicializa a lista de Passageiros e namedpipes
+	InfoPassagPipes* infoPassagPipes = inicializaListaPassagPipes();
+	if (infoPassagPipes == NULL) {
+		return 1;
+	}
+	infoControl.infoPassagPipes = infoPassagPipes;
+
 	// Variaveis de controlo
 	infoControl.terminaControlador = (int*) malloc(sizeof(int));
 	if (infoControl.terminaControlador == NULL) {
@@ -128,9 +115,8 @@ int _tmain() {
 		return 1;
 	}
 
-
 	// Pipes
-	HANDLE hThreadNamedPipes = CreateThread(NULL, 0, threadNamedPipes, (LPVOID)&arrayPipes, 0, NULL);
+	HANDLE hThreadNamedPipes = CreateThread(NULL, 0, threadNamedPipes, (LPVOID)&infoControl, 0, NULL);
 	if (hThreadTimer == NULL) {
 		*infoControl.terminaControlador = 1;
 		WaitForSingleObject(hThreadBuffer, INFINITE);
