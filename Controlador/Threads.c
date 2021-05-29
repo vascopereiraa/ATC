@@ -3,9 +3,6 @@
 #include <tchar.h>
 #include <fcntl.h>
 
-#define CONNECTING_STATE 0 
-#define READING_STATE 1 
-#define WRITING_STATE 2 
 #include "../Aviao/Aviao.h"
 #include "Controlador.h"
 #include "Aviao.h"
@@ -124,10 +121,10 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 
 				if (listaAvioes[pos].av.embarcaPassag) {
 					listaAvioes[pos].av.embarcaPassag = FALSE;
-					if (!embarcaPassageiros(&(dados->infoPassagPipes), &listaAvioes[pos].av)) {
+					if (!embarcaPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av)) {
 						_tprintf(L"Erro ao embarcar os passageiros!\n");
 					}
-					_tprintf(L"Embarquei passageiros!\n");
+					_tprintf(L"Embarquei passageiros no avião [%d]!\n", listaAvioes[pos].av.procID);
 				}
 
 				// Verifica disponibilidade espaco aereo
@@ -137,12 +134,14 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 						case 0:		// Pode avancar
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
+							atualizaCoordPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av);
 							break;
 						case 1:		// Esta no aeroporto destino
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							_tcscpy_s(listaAvioes[pos].av.aeroOrigem, STR_TAM, listaAvioes[pos].av.aeroDestino);
 							_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
+							informaPassagDestino(dados->infoPassagPipes, &listaAvioes[pos].av);
 							break;
 						case 2:		// Posicao esta ocupada
 							listaAvioes[pos].av.isSobreposto = TRUE;
@@ -187,10 +186,10 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			}
 		}
 		LeaveCriticalSection(&dados->criticalSectionControl);
-	}
+		}
 
 	debug(L"Terminei - ThreadTimer");
-}
+	}
 
 void WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
@@ -203,9 +202,10 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 	HANDLE hThread = NULL;
 	HANDLE hEventTemp = NULL;
 
+	EnterCriticalSection(&infoControl->criticalSectionControl);
 	// Criação de todos os pipes possíveis a vir a existir
 	for (int i = 0; i < MAX_PASSAG; i++) {
-		_tprintf(L"[ESCRITOR] A criar cópia do pipe [%s] .. (CreateNamedPipe)\n", PIPE_NAME);
+		//_tprintf(L"[ESCRITOR] A criar cópia do pipe [%s] .. (CreateNamedPipe)\n", PIPE_NAME);
 
 		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if (hEventTemp == NULL) {
@@ -226,11 +226,13 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 			break;
 		}
 
+		ZeroMemory(&infoPassagPipes->hPipes[i], sizeof(infoPassagPipes->hPipes[i]));
 		infoPassagPipes->hEvents[i] = hEventTemp;
 		infoPassagPipes->hPipes[i].hPipeInst = hPipeTemp;
 		infoPassagPipes->hPipes[i].oOverLap.hEvent = infoPassagPipes->hEvents[i];
 
 		// Call the subroutine to connect to the new client
+
 		infoPassagPipes->hPipes[i].fPendingIO = ConnectToNewClient(
 			infoPassagPipes->hPipes[i].hPipeInst,
 			&infoPassagPipes->hPipes[i].oOverLap);
@@ -239,7 +241,7 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 			CONNECTING_STATE : // still connecting 
 			READING_STATE;     // ready to read 
 	}
-
+	LeaveCriticalSection(&infoControl->criticalSectionControl);
 	/*hThread = CreateThread(NULL, 0, threadLeitorNamedPipes, &arrNamedPipes, 0, NULL);
 	if (hThread == NULL) {
 		_tprintf(TEXT("[ERRO] Criar a Thread para ler do namedPipe! !\n"));
@@ -252,14 +254,13 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 	passageiro passagAux;
 	ZeroMemory(&passagAux, sizeof(passageiro));
 	while (1) {
-		_tprintf(L"[ESCRITOR] Esperando ligação de um Passageiro. \n");
+		_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
 		// Está a espera que seja aberto nova instancia de pipe
 		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
 		indice = iResult - WAIT_OBJECT_0;
-		ResetEvent(infoPassagPipes->hEvents[indice]);
 		// Reset
-		//ResetEvent(infoPassagPipes->hEvents[indice]);
-		_tprintf(L"[ESCRITOR] Evento acionado nr: [%i] \n", indice);
+		ResetEvent(infoPassagPipes->hEvents[indice]);
+		_tprintf(L"[CONTROL] Evento acionado nr: [%i] \n", indice);
 		if (indice < 0 || indice >(MAX_PASSAG - 1))
 		{
 			_tprintf(L"Index fora do range! \n");
@@ -268,14 +269,14 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 		if (infoPassagPipes->hPipes[indice].fPendingIO) {
 			fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
 			switch (infoPassagPipes->hPipes[indice].dwState) {
-				// Aguardar conexão ainda
+			// Aguardar conexão ainda
 			case CONNECTING_STATE:
 				if (!fSuccess)
 				{
 					_tprintf(L"Error %d.\n", GetLastError());
 					return 0;
 				}
-				_tprintf(L"\n\n1º switch: CONNECTING_STATE!! ADICIONAR A LISTA AQUI!\n");
+				_tprintf(L"\n1º switch: CONNECTING_STATE\n");
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 				break;
 				// Pending read operation 
@@ -285,61 +286,86 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 					_tprintf(L"[ERROR] Reading\n");
 					continue;
 				}
-				_tprintf(L"\n\n1º switch: READING_STATE!!!\n\n");
+				_tprintf(L"\n1º switch: READING_STATE\n");
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+				break;
+			case WRITING_STATE:
+				infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
+				_tprintf(L"\n1º switch: Writing state.\n");
 				break;
 			default:
 				_tprintf(L"Invalid pipe state.\n");
 				return 0;
 			}
 		}
-		// The pipe state determines which operation to do next. 
-		switch (infoPassagPipes->hPipes[indice].dwState)
-		{
-		case READING_STATE:
-			fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-			_tprintf(L"\n\n2º switch: READING_STATE!!!\n\n");
-			_tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroOrigem, passagAux.aeroDestino, passagAux.fraseInfo);
-			int pos = -1;
-			if (isNovoPassag(passagAux, listPass)) {
-				_tprintf(L"Vou criar um passageiro novo: %d\n", passagAux.idPassag);
-				pos = getPrimeiraPosVaziaPassag(listPass);
-				if (pos > -1) {
-					debug(L"Novo Passag");
-					listPass[pos].passag = passagAux;
-					_tprintf(L"Valores na estrutura: %d %s", listPass[pos].passag.idPassag, listPass[pos].passag.nomePassag);
-					listPass[pos].passag.indicePipe = indice;
-					listPass[pos].isFree = FALSE;
+			// The pipe state determines which operation to do next. 
+			switch (infoPassagPipes->hPipes[indice].dwState)
+			{
+			case WRITING_STATE:
+				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+				_tprintf(L"2º switch: Writing state.\n");
+				break;
+			case READING_STATE:
+				fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
+				_tprintf(L"2º switch: READING_STATE\n\n");
+				
+				// Caso seja a 1º conexão, nome ainda não está preenchido
+				if (passagAux.nomePassag[0] == '\0') {
+					_tprintf(L"\nPrimeiro connect: Sem dados ainda !\n\n");
+					break;
 				}
-				// Mutex aqui
-				int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
-				// Se não existir aero de origem ou destino, avisa passageiro para ir embora
-				if (existeAero != 0) {
-					passagAux.sair = existeAero;
-					listPass[pos].isFree = TRUE;
-					fSuccess = WriteFile(infoPassagPipes->hPipes[indice].hPipeInst,&passagAux,sizeof(passageiro),&totalBytes,&infoPassagPipes->hPipes[indice].oOverLap);
-					_tprintf(L"Não existe o aero [%d] para o passag [%d] \n",existeAero, passagAux.idPassag);
+				else {
+					_tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroOrigem, passagAux.aeroDestino, passagAux.fraseInfo);
 				}
-				_tprintf(L"Existe o aero [%d] para o passag [%d]\n",existeAero, passagAux.idPassag);
+				// The read operation is still pending. 
+				/*DWORD dwErr = GetLastError();
+				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+				{
+					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
+					continue;
+				}*/
+				int pos = -1;
+				if (isNovoPassag(passagAux, listPass)) {
+					_tprintf(L"Vou criar um passageiro novo: %d\n", passagAux.idPassag);
+					pos = getPrimeiraPosVaziaPassag(listPass);
+					if (pos > -1) {
+						debug(L"Novo Passag");
+						listPass[pos].passag = passagAux;
+						listPass[pos].passag.indicePipe = indice;
+						listPass[pos].isFree = FALSE;
+					}
+					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
+					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
+					if (existeAero != 0) {
+						passagAux.sair = existeAero;
+						listPass[pos].isFree = TRUE;
+						WriteFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
+						//_tprintf(L"Não existe o aero [%d] para o passag [%d] \n", existeAero, passagAux.idPassag);
+					}
+					//_tprintf(L"Existe o aero [%d] para o passag [%d]\n", existeAero, passagAux.idPassag);
+				}
+				/*else {
+					_tprintf(L"Passageiro já existe !\n");
+				}*/
+				break;
+				
+			default:
+				_tprintf(L"Invalid pipe state.\n");
+				return 0;
 			}
-			break;
-		default:
-			_tprintf(L"Invalid pipe state.\n");
-			return 0;
-		}
-		ResetEvent(infoPassagPipes->hEvents[indice]);
+
+		LeaveCriticalSection(&infoControl->criticalSectionControl);
 	}
-	// DESLIGAR OS TUBOS TODOS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//_tprintf(TEXT("[CONTROL] Desligar os pipes (DisconnectNamedPipe)\n"));
-	//// Disconecta de todos os pipes
-	//for (int i = 0; i < MAX_PASSAG; i++) {
-	//	if (!DisconnectNamedPipe(infoPassagPipes->hPipes[i].hPipeInst)) {
-	//		_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
-	//		return -1;
-	//	}
-	//	CloseHandle(infoPassagPipes->hPipes[i].hPipeInst);
-	//	CloseHandle(infoPassagPipes->hEvents[i]);
-	//}
+
+	// Disconecta de todos os pipes
+	for (int i = 0; i < MAX_PASSAG; i++) {
+		if (!DisconnectNamedPipe(infoPassagPipes->hPipes[i].hPipeInst)) {
+			_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
+			return -1;
+		}
+		CloseHandle(infoPassagPipes->hPipes[i].hPipeInst);
+		CloseHandle(infoPassagPipes->hEvents[i]);
+	}
 }
 
 
@@ -384,6 +410,12 @@ void menu(infoControlador * infoControl) {
 				imprimeListaAvioes(infoControl->listaAvioes, infoControl->tamAvioes);
 				_tprintf(L"\n");
 			}
+			if (!_tcscmp(token, L"lpass")) {
+				_tprintf(L"Lista de passageiros:\n");
+				imprimeListaPassag(infoControl->infoPassagPipes->listPassag);
+				_tprintf(L"\n");
+			}
+
 			if (!_tcscmp(token, L"susp")) {
 				if (*(infoControl->suspendeNovosAvioes) != 1) {
 					*(infoControl->suspendeNovosAvioes) = 1;
@@ -421,4 +453,4 @@ void menu(infoControlador * infoControl) {
 		}
 	}
 
-}
+	}

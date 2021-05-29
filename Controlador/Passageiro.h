@@ -31,3 +31,6 @@ int getPrimeiraPosVaziaPassag(listaPassag* listPassag);
 BOOL isNovoPassag(passageiro passag, listaPassag* listPassag);
 BOOL verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAeroportos);
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
+InfoPassagPipes* inicializaListaPassagPipes();
+void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
+void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av);

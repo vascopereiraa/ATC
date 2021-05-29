@@ -21,8 +21,8 @@ int _tmain(int argc, LPTSTR argv[]) {
     _tcscpy_s(&passag.nomePassag, STR_TAM, L"joao");
     _tcscpy_s(&passag.fraseInfo, STR_TAM, L"frase teste");
     passag.idPassag = GetCurrentProcessId();
-    passag.atuais.posX = -1;
-    passag.atuais.posY = -1;
+    passag.coordAtuais.posX = -1;
+    passag.coordAtuais.posY = -1;
     passag.tempoEspera = 10000;
 
 #ifdef UNICODE 
@@ -48,51 +48,54 @@ int _tmain(int argc, LPTSTR argv[]) {
     }
     _tprintf(TEXT("[LEITOR] Liguei-me...\n"));
 
-
     HANDLE hThread = CreateThread(NULL, 0, ThreadEscritor, &passag, 0, NULL);
     if (hThread == NULL) {
         _tprintf(TEXT("[ERRO] Criar a Thread! !\n"));
         return -1;
     }
-
     // Escrita no pipe para informar controlador sobre a sua existência com envio da sua estrutura
     if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
     }
 
-    
-
+    _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
     // Criar thread para escrever no pipe para terminar
-    while (1) {
-        ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
-        if (!ret || !numBytesLidos) {
+    while (passag.sair) {
+        if (!ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL))
+            break;
+        //ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
+        /*if (!ret || !numBytesLidos) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
             break;
-        }
+        }*/
 
         if(passag.sair == 1){
             _tprintf(L"Não existe o aeroporto de Origem!\n");
-            //TerminateThread(hThread,NULL);
-            //CloseHandle(passag.hPipe);
-            //return 0;
+            TerminateThread(hThread,NULL);
+            break;
         }
         if (passag.sair == 2) {
             _tprintf(L"Não existe o aeroporto de Destino!\n");
-            //TerminateThread(hThread, NULL);
-            //CloseHandle(passag.hPipe);
-            //return 0;
+            TerminateThread(hThread, NULL);
+            break;
         }
         if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
-            _tprintf(L"Passageiro vai embarcar no avião %d", passag.nrAviao);
+            _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
         }
-
-        _tprintf(TEXT("[LEITOR] Recebi %d bytes... (ReadFile)\n"), numBytesLidos);
-        _tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
-
+        if (!_tcscmp(passag.fraseInfo, L"Em Viagem")) {
+            _tprintf(L"Em viagem nas Coord x: [%d] Coord y: [%d]\n", passag.coordAtuais.posX, passag.coordAtuais.posY);
+        }
+        if (!_tcscmp(passag.fraseInfo, L"Chegou ao destino")) {
+            _tprintf(L"Passageiro chegou ao destino [%s] com coordenadas x: [%d] y: [%d] no avião %d", passag.aeroDestino,passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
+            TerminateThread(hThread, NULL);
+            break;
+        }
     }
-
-    CloseHandle(passag.hPipe);
+    if (passag.sair != 3) {
+        DisconnectNamedPipe(passag.hPipe);
+        CloseHandle(passag.hPipe);
+    }
     Sleep(200);
     return 0;
 }
@@ -100,18 +103,17 @@ int _tmain(int argc, LPTSTR argv[]) {
 DWORD WINAPI ThreadEscritor(LPVOID lparam)
 {
     passageiro* passag = (passageiro*)lparam;
-    DWORD n = 0;
-
     do {
-        _tprintf(TEXT("[ESCRITOR] Frase: "));
+        _tprintf(TEXT("Escreva \"fim\" para terminar a qualquer momento: "));
         _fgetts(passag->fraseInfo, STR_TAM, stdin);
         passag->fraseInfo[_tcslen(passag->fraseInfo) - 1] = '\0';
-        
-        _tprintf(L"Estou a funcionar colega ! Se escreveu fim, fodi-me\n");
-
     } while (_tcscmp(passag->fraseInfo, TEXT("fim")));
+    
+    // Close handle para sair do read ?
+    passag->sair = 3;
+    // Like this ? Fazer writefile a informar da morte do homem ao control ? Meh. check later
+    DisconnectNamedPipe(passag->hPipe);
+    CloseHandle(passag->hPipe);
 
-
-    //DisconnectNamedPipe(passag->hPipe);
     return 0;
 }

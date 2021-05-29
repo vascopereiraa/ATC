@@ -6,7 +6,7 @@
 #include "Controlador.h"
 #include "Utils.h"
 #include "Constantes.h"
-#include "../Passageiro/Passageiro.h"
+#include "Passageiro.h"
 
 /* PIPES
 
@@ -67,8 +67,8 @@ int _tmain() {
 	infoControl.listaAeroportos[0].localizacao.posY = 0;
 
 	_tcscpy_s(&infoControl.listaAeroportos[1].nome, STR_TAM, L"lisboa");
-	infoControl.listaAeroportos[1].localizacao.posX = 10;
-	infoControl.listaAeroportos[1].localizacao.posY = 10;
+	infoControl.listaAeroportos[1].localizacao.posX = 50;
+	infoControl.listaAeroportos[1].localizacao.posY = 50;
 
 	infoControl.indiceAero = 2;
 #endif

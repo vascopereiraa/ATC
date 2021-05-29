@@ -17,6 +17,11 @@
 #define EVNT_AVIAO _TEXT("EVNT_%d")
 #define DLL_LOCATION _TEXT("../../DLL/%s/SO2_TP_DLL_2021.dll")
 
+// Named Pipes
+#define CONNECTING_STATE 0 
+#define READING_STATE 1 
+#define WRITING_STATE 2 
+
 // Passageiro
 #define PIPE_NAME TEXT("\\\\.\\pipe\\TrabalhoPratico")
 #define MAX_PASSAG 30

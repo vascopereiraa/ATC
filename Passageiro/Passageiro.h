@@ -9,7 +9,7 @@ typedef struct {
 	TCHAR nomePassag[STR_TAM];
 	TCHAR aeroOrigem[STR_TAM];
 	TCHAR aeroDestino[STR_TAM];
-	coordenadas atuais;
+	coordenadas coordAtuais;
 	int tempoEspera;
 	int sair;	// 1-> Não existe o aero de origem! 
 
@@ -17,6 +17,6 @@ typedef struct {
 	// teste
 	TCHAR fraseInfo[STR_TAM];
 	int indicePipe; // Indice do pipe para o control poder aceder a posição correta no array de instancias
-	int nrAviao;
+	int nrAviaoEmbarcado;
 	int contadorTeste;
 } passageiro;
