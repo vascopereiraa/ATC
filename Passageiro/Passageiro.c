@@ -62,8 +62,11 @@ int _tmain(int argc, LPTSTR argv[]) {
     _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
     // Criar thread para escrever no pipe para terminar
     while (passag.sair) {
-        if (!ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL))
+        if (!ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL)) {
+            if (passag.sair != 3)
+                _tprintf(L"Erro na leitura do pipe!\n");
             break;
+        }
         //ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
         /*if (!ret || !numBytesLidos) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
