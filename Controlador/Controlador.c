@@ -122,7 +122,6 @@ int _tmain() {
 		encerraControlador(&infoControl);
 		return 1;
 	}
-	// Pipes
 
 	// Abre e executa o menu de utilizador
 	menu(&infoControl);
