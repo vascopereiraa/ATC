@@ -29,6 +29,9 @@ typedef struct {
 	int* terminaControlador;					// Flag para terminar o controlador
 	int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
 	CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
+
+	HWND hWnd;
+
 } infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem

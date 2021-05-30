@@ -135,13 +135,16 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							atualizaCoordPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av);
+							InvalidateRect(dados->hWnd, NULL, TRUE);
 							break;
 						case 1:		// Esta no aeroporto destino
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							_tcscpy_s(listaAvioes[pos].av.aeroOrigem, STR_TAM, listaAvioes[pos].av.aeroDestino);
 							_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
+							listaAvioes[pos].av.emViagem = FALSE;
 							informaPassagDestino(dados->infoPassagPipes, &listaAvioes[pos].av);
+							InvalidateRect(dados->hWnd, NULL, TRUE);
 							break;
 						case 2:		// Posicao esta ocupada
 							listaAvioes[pos].av.isSobreposto = TRUE;
@@ -185,11 +188,13 @@ void WINAPI threadTimer(LPVOID lpParam) {
 				}
 			}
 		}
+
+		InvalidateRect(dados->hWnd, NULL, TRUE);
 		LeaveCriticalSection(&dados->criticalSectionControl);
-		}
+	}
 
 	debug(L"Terminei - ThreadTimer");
-	}
+}
 
 DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;

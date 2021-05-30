@@ -1,4 +1,4 @@
-
+ï»¿
 #include "framework.h"
 #include "ControladorGrafico.h"
 #include <fcntl.h>
@@ -17,9 +17,11 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
+BOOL                InitInstance(HINSTANCE, int, infoControlador*);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+int displayInfo(HWND hWnd, infoControlador* dados);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -67,7 +69,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         return 1;
     }
 
-    _tprintf(L"\nValores do registry:\n Número máximo de Aeroportos => %d\n Número máximo de Aviões => %d\n", infoControl.tamAeroporto, infoControl.tamAvioes);
+    _tprintf(L"\nValores do registry:\n NÃºmero mÃ¡ximo de Aeroportos => %d\n NÃºmero mÃ¡ximo de AviÃµes => %d\n", infoControl.tamAeroporto, infoControl.tamAvioes);
 
     // Inicializa a lista de Aeroportos
     aeroporto* aeroportos = inicializaListaAeroportos(infoControl.tamAeroporto);
@@ -86,7 +88,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
     infoControl.listaAeroportos[1].localizacao.posX = 50;
     infoControl.listaAeroportos[1].localizacao.posY = 50;
 
-    infoControl.indiceAero = 2;
+    _tcscpy_s(&infoControl.listaAeroportos[2].nome, STR_TAM, L"faro");
+    infoControl.listaAeroportos[2].localizacao.posX = 1000;
+    infoControl.listaAeroportos[2].localizacao.posY = 1000;
+
+    infoControl.indiceAero = 3;
 #endif
 
     // Inicializa a lista de Avioes
@@ -121,7 +127,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         return 1;
     }
 
-    // Cria a Thread de Timer para a reação às respostas dos avioes
+    // Cria a Thread de Timer para a reaÃ§Ã£o Ã s respostas dos avioes
     HANDLE hThreadTimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadTimer, (LPVOID)&infoControl, 0, NULL);
     if (hThreadTimer == NULL) {
         *infoControl.terminaControlador = 1;
@@ -146,10 +152,10 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_CONTROLADORGRAFICO, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+    MyRegisterClass(hInstance, &infoControl);
 
     // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!InitInstance (hInstance, nCmdShow, &infoControl))
     {
         return FALSE;
     }
@@ -195,7 +201,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
+    wcex.cbWndExtra     = sizeof(infoControlador*);
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CONTROLADORGRAFICO));
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
@@ -217,17 +223,19 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, infoControlador* infoControl)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      CW_USEDEFAULT, 0, 1025, 1075, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
       return FALSE;
    }
+
+   SetWindowLongPtr(hWnd, 0, (LONG_PTR) infoControl);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -247,6 +255,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    infoControlador* dados = (infoControlador*)GetWindowLongPtr(hWnd, 0);
+
     switch (message)
     {
     case WM_COMMAND:
@@ -267,12 +277,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
+        displayInfo(hWnd, dados);
+        break;
+    case WM_CLOSE:
+        DestroyWindow(hWnd);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -302,3 +310,57 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+
+int displayInfo(HWND hWnd, infoControlador* dados) {
+    RECT rectClientWindow = { 0, 0, 0, 0 };
+    SIZE sizeTextLogicalSize = { 0, 0 };
+    int tamstrchars = 0;
+    // Paint brush
+    PAINTSTRUCT ps;
+    TCHAR mystring[200] = _TEXT("");
+
+
+    HDC hDC = BeginPaint(hWnd, &ps);
+    SetBkMode(hDC, TRANSPARENT);
+    // Colocar cor do texto a azul
+    SetTextColor(hDC, RGB(0, 0, 255));
+
+    GetClientRect(hWnd, &rectClientWindow);
+    
+    TCHAR t[5] = _TEXT("");
+    for (int i = 0; i < dados->tamAvioes; ++i) {
+        if (dados->listaAvioes[i].isFree == FALSE) {
+            if (dados->listaAvioes[i].av.emViagem == TRUE)
+                _tcscpy_s(t, 5, L"1");
+            else
+                _tcscpy_s(t, 5, L" ");
+
+            // FunÃ§Ã£o diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+            GetTextExtentPoint32(hDC, t, _tcslen(t), &sizeTextLogicalSize);
+
+            TextOut(hDC,
+                //(rectClientWindow.right - sizeTextLogicalSize.cx) / 2,
+                //rectClientWindow.bottom / 2,
+                dados->listaAvioes[i].av.atuais.posX,
+                dados->listaAvioes[i].av.atuais.posY,
+                t,
+                _tcslen(t));
+        }
+    }
+
+    for (int i = 0; i < dados->tamAeroporto; ++i) {
+        // FunÃ§Ã£o diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+        GetTextExtentPoint32(hDC, L"0", _tcslen(L"0"), &sizeTextLogicalSize);
+
+        TextOut(hDC,
+            //(rectClientWindow.right - sizeTextLogicalSize.cx) / 2,
+            //rectClientWindow.bottom / 2,
+            dados->listaAeroportos[i].localizacao.posX,
+            dados->listaAeroportos[i].localizacao.posY,
+            L"0",
+            _tcslen(L"0"));
+    }
+
+    SetBkMode(hDC, OPAQUE);
+}
+    
