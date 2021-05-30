@@ -120,6 +120,9 @@ void encerraControlador(infoControlador* infoControl) {
 	if (infoControl->bufCirc != NULL)
 		encerraBufferCircular(infoControl->bufCirc);
 
+	if (infoControl->infoPassagPipes != NULL)
+		free(infoControl->infoPassagPipes);
+
 	if (infoControl->listaAvioes != NULL)
 		free(infoControl->listaAvioes);
 

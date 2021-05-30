@@ -107,6 +107,7 @@ void menu(infoAviao* dados) {
 	/*
 	* Commandos:
 	* dest + "nomeDestino"		Definir o destino
+	* embarca					Embarca passageiros
 	* start						Iniciar viagem
 	* end						Terminar a viagem a qualquer momento
 	*
@@ -162,7 +163,8 @@ void menu(infoAviao* dados) {
 			}
 			if (!_tcscmp(token, L"cmd")) {
 				_tprintf(L"dest + destino = definir destino\nstart = comecar viagem\n"
-					L"info = informação sobre o avião\nend = terminar avião\n\n");
+					L"embarca = embarca passageiros no voo\ninfo = informação sobre o avião\n"
+					L"end = terminar avião\n\n");
 			}
 		}
 

@@ -191,7 +191,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	debug(L"Terminei - ThreadTimer");
 	}
 
-void WINAPI threadNamedPipes(LPVOID lpParam) {
+DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
 	InfoPassagPipes* infoPassagPipes = infoControl->infoPassagPipes;
 	listaPassag* listPass = infoPassagPipes->listPassag;
@@ -370,7 +370,6 @@ void WINAPI threadNamedPipes(LPVOID lpParam) {
 
 
 void menu(infoControlador * infoControl) {
-	int opcao;
 	TCHAR comando[STR_TAM], comandoAux[STR_TAM];
 	TCHAR* buffer = NULL;
 	TCHAR* token = NULL;
@@ -379,6 +378,7 @@ void menu(infoControlador * infoControl) {
 	* aero + nome + coordX + coordY
 	* laero = lista aeroportos
 	* lavioes = lista avioes
+	* lpass = lista passageiros
 	* susp = suspender comunicações
 	* ret = retomar comunicações
 	* end = terminar controlador
@@ -433,7 +433,7 @@ void menu(infoControlador * infoControl) {
 			}
 			if (!_tcscmp(token, L"cmd")) {
 				_tprintf(L"aero + nome + coordX + coordY = criar aeroporto\nlaero = lista aeroportos\nlavioes = lista avioes\nsusp = suspender comunicações\n"
-					L"ret = retomar comunicações\nend = terminar controlador\ncmd = comandos disponiveis\n\n");
+					L"ret = retomar comunicações\nlpass = lista os passageiros conectados\nend = terminar controlador\ncmd = comandos disponiveis\n\n");
 			}
 			LeaveCriticalSection(&infoControl->criticalSectionControl);
 		}

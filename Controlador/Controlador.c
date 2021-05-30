@@ -8,10 +8,6 @@
 #include "Constantes.h"
 #include "Passageiro.h"
 
-/* PIPES
-
-*/
-
 int _tmain() {
 
 #ifdef UNICODE
@@ -99,14 +95,14 @@ int _tmain() {
 	criaCriticalSectionControl(&infoControl.criticalSectionControl);
 
 	// Criar a Thread para gerenciar o buffer circular
-	HANDLE hThreadBuffer = CreateThread(NULL, 0, threadControloBuffer, (LPVOID) &infoControl, 0, NULL);
+	HANDLE hThreadBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) threadControloBuffer, (LPVOID) &infoControl, 0, NULL);
 	if (hThreadBuffer == NULL) {
 		encerraControlador(&infoControl);
 		return 1;
 	}
 
 	// Cria a Thread de Timer para a reação às respostas dos avioes
-	HANDLE hThreadTimer = CreateThread(NULL, 0, threadTimer, (LPVOID) &infoControl, 0, NULL);
+	HANDLE hThreadTimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) threadTimer, (LPVOID) &infoControl, 0, NULL);
 	if (hThreadTimer == NULL) {
 		*infoControl.terminaControlador = 1;
 		WaitForSingleObject(hThreadBuffer, INFINITE);
@@ -116,10 +112,12 @@ int _tmain() {
 	}
 
 	// Pipes
-	HANDLE hThreadNamedPipes = CreateThread(NULL, 0, threadNamedPipes, (LPVOID)&infoControl, 0, NULL);
+	HANDLE hThreadNamedPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) threadNamedPipes, (LPVOID)&infoControl, 0, NULL);
 	if (hThreadTimer == NULL) {
 		*infoControl.terminaControlador = 1;
 		WaitForSingleObject(hThreadBuffer, INFINITE);
+		WaitForSingleObject(hThreadTimer, INFINITE);
+		CloseHandle(hThreadTimer);
 		CloseHandle(hThreadBuffer);
 		encerraControlador(&infoControl);
 		return 1;
@@ -131,8 +129,10 @@ int _tmain() {
 
 	WaitForSingleObject(hThreadBuffer, INFINITE);
 	WaitForSingleObject(hThreadTimer, INFINITE);
+	WaitForSingleObject(hThreadNamedPipes, INFINITE);
 	CloseHandle(hThreadBuffer);
 	CloseHandle(hThreadTimer);
+	CloseHandle(hThreadNamedPipes);
 	encerraControlador(&infoControl);
 
 	fim(L"... Controlador Encerrado ...");

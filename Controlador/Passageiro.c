@@ -143,3 +143,4 @@ void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av) {
 		}
 	}
 }
+

@@ -41,7 +41,7 @@ void menu(infoControlador* infoControl);
 // Threads do controlador
 void WINAPI threadControloBuffer(LPVOID lpParam);
 void WINAPI threadTimer(LPVOID lpParam);
-void WINAPI threadNamedPipes(LPVOID lpParam);
+DWORD WINAPI threadNamedPipes(LPVOID lpParam);
 
 // Funcoes - Registry
 BOOL controladorRegistry(int* maxAeroportos, int* maxAvioes);
