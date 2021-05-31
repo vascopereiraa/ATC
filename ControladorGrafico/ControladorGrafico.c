@@ -22,6 +22,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int displayInfo(HWND hWnd, infoControlador* dados);
+int displayInfoBitBlt(HWND hWnd, infoControlador* dados);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -40,6 +41,17 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
     infoControlador infoControl;
     ZeroMemory(&infoControl, sizeof(infoControlador));
+
+    // Meter num sitio mais bonito
+    infoControl.pintor = (Pintor*)malloc(sizeof(Pintor));
+    if (infoControl.pintor == NULL) {
+        fatal(L"Ocorreu um erro ao criar a lista de avioes");
+        return NULL;
+    }
+    infoControl.pintor->hbDB = NULL;
+    infoControl.pintor->hdc = NULL;
+    infoControl.pintor->hdcDB = NULL;
+    infoControl.pintor->hWnd = NULL;
 
     // Inicializa a lista de Passageiros e namedpipes
     InfoPassagPipes* infoPassagPipes = inicializaListaPassagPipes();
@@ -89,8 +101,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
     infoControl.listaAeroportos[1].localizacao.posY = 50;
 
     _tcscpy_s(&infoControl.listaAeroportos[2].nome, STR_TAM, L"faro");
-    infoControl.listaAeroportos[2].localizacao.posX = 1000;
-    infoControl.listaAeroportos[2].localizacao.posY = 1000;
+    infoControl.listaAeroportos[2].localizacao.posX = 500;
+    infoControl.listaAeroportos[2].localizacao.posY = 500;
 
     infoControl.indiceAero = 3;
 #endif
@@ -277,7 +289,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_PAINT:
-        displayInfo(hWnd, dados);
+        //displayInfo(hWnd, dados);
+        EnterCriticalSection(&dados->criticalSectionControl);
+        displayInfoBitBlt(hWnd, dados);
+        LeaveCriticalSection(&dados->criticalSectionControl);
+        break;
+    case WM_ERASEBKGND:
         break;
     case WM_CLOSE:
         DestroyWindow(hWnd);
@@ -285,6 +302,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+    case WM_SIZE:
+        EnterCriticalSection(&dados->criticalSectionControl);
+        if (dados->pintor->hbDB != NULL) {
+            SelectObject(dados->pintor->hdcDB, NULL);
+            DeleteObject(dados->pintor->hbDB);
+            dados->pintor->hdc = GetDC(hWnd);
+            dados->pintor->hbDB = CreateCompatibleBitmap(dados->pintor->hdc, LOWORD(lParam), HIWORD(lParam));
+            ReleaseDC(hWnd, dados->pintor->hdc);
+            SelectObject(dados->pintor->hdcDB, dados->pintor->hbDB);
+        }
+        LeaveCriticalSection(&dados->criticalSectionControl);
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -364,3 +392,47 @@ int displayInfo(HWND hWnd, infoControlador* dados) {
     SetBkMode(hDC, OPAQUE);
 }
     
+int displayInfoBitBlt(HWND hWnd, infoControlador* dados) {
+    RECT rectClientWindow = { 0, 0, 0, 0 };
+    SIZE sizeTextLogicalSize = { 0, 0 };
+    int tamstrchars = 0;
+    // Paint brush
+    PAINTSTRUCT ps;
+    TCHAR mystring[200] = _TEXT("");
+    
+
+    dados->pintor->hdc = BeginPaint(hWnd, &ps);
+    //SetBkMode(hDC, TRANSPARENT);
+    // Colocar cor do texto a azul
+    SetTextColor(dados->pintor->hdc, RGB(0, 0, 255));
+    GetClientRect(hWnd, &rectClientWindow);
+    
+    if (dados->pintor->hdcDB == NULL) {
+        dados->pintor->hdcDB = CreateCompatibleDC(dados->pintor->hdc);
+        dados->pintor->hbDB = CreateCompatibleBitmap(dados->pintor->hdc, rectClientWindow.right, rectClientWindow.bottom);
+        SelectObject(dados->pintor->hdcDB, dados->pintor->hbDB);
+    }
+    FillRect(dados->pintor->hdcDB, &rectClientWindow, (HBRUSH)GetStockObject(WHITE_BRUSH));
+    //BitBlt(hdcDB, DadosCtrl.x, DadosCtrl.y, bmp.bmWidth, bmp.bmHeight, hdcpic, 0, 0, SRCCOPY);
+    TCHAR t[5] = _TEXT("");
+    for (int i = 0; i < dados->tamAeroporto; ++i) {
+        // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+        GetTextExtentPoint32(dados->pintor->hdcDB, L"0", _tcslen(L"0"), &sizeTextLogicalSize);
+        TextOut(dados->pintor->hdcDB,dados->listaAeroportos[i].localizacao.posX,dados->listaAeroportos[i].localizacao.posY,L"0",_tcslen(L"0"));
+    }
+    for (int i = 0; i < dados->tamAvioes; ++i) {
+        if (dados->listaAvioes[i].isFree == FALSE) {
+            if (dados->listaAvioes[i].av.emViagem == TRUE)
+                _tcscpy_s(t, 5, L"1");
+            else
+                _tcscpy_s(t, 5, L" ");
+            // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+            GetTextExtentPoint32(dados->pintor->hdcDB, t, _tcslen(t), &sizeTextLogicalSize);
+            TextOut(dados->pintor->hdcDB,dados->listaAvioes[i].av.atuais.posX,dados->listaAvioes[i].av.atuais.posY,t,_tcslen(t));
+        }
+    }
+    BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->hdcDB, 0, 0, SRCCOPY);
+    EndPaint(hWnd, &ps);
+
+    //SetBkMode(hDC, OPAQUE);
+}

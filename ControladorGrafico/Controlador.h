@@ -10,6 +10,13 @@
 #include "Passageiro.h"
 
 typedef struct {
+	HWND hWnd;
+	HDC hdcDB;
+	HBITMAP hbDB;
+	HDC hdc;
+} Pintor;
+
+typedef struct {
 	HANDLE hFileMap;		// Handle para a zona de memória partilhada
 	HANDLE hSemItens;	    // Handle para o semaforo de Itens colocados no buffer
 	HANDLE hSemMutexProd;   // Handle para o semaforo binário usado para sincronização entre aviões
@@ -21,6 +28,7 @@ typedef struct {
 	controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
 	listaAviao* listaAvioes;		// Array de avioes
 	aeroporto* listaAeroportos;		// Array de aeroportos
+	Pintor* pintor;
 
 	int tamAvioes;					// Tamanho do array de avioes
 	int tamAeroporto;				// Tamanho do array de aeroportos
@@ -29,9 +37,6 @@ typedef struct {
 	int* terminaControlador;					// Flag para terminar o controlador
 	int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
 	CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
-
-	HWND hWnd;
-
 } infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem
