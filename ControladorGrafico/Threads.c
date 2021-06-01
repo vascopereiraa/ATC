@@ -136,6 +136,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							atualizaCoordPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av);
 							InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
+							//UpdateWindow(dados->pintor->hWnd);
 							break;
 						case 1:		// Esta no aeroporto destino
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
@@ -168,8 +169,10 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	infoControlador* dados = (infoControlador*)lpParam;
 	listaAviao* listaAvioes = dados->listaAvioes;
 	int tamAvioes = dados->tamAvioes;
+	BOOL alteraDisplay = FALSE;
 
 	while (!*(dados->terminaControlador)) {
+		alteraDisplay = FALSE;
 		Sleep(3000);
 		EnterCriticalSection(&dados->criticalSectionControl);
 #ifdef TESTES
@@ -183,13 +186,15 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			}
 			else {
 				if (!listaAvioes[i].isFree) {
+					alteraDisplay = TRUE;
 					listaAvioes[i].isFree = TRUE;
 					encerraMemoriaPartilhada(&listaAvioes[i].memAviao);
 				}
 			}
 		}
+		if (alteraDisplay)
+			InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
 
-		InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
 		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
 

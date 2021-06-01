@@ -12,8 +12,8 @@ void debug(TCHAR* string) {
 
 void erro(TCHAR* string) {
 	_ftprintf(stderr, L"[ERRO] %s\n", string);
-	_tprintf(L"Pressione [ENTER] para avançar...\n");
-	(void) _gettchar();
+	//_tprintf(L"Pressione [ENTER] para avançar...\n");
+	//(void) _gettchar();
 }
 
 void fatal(TCHAR* string) {

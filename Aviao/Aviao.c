@@ -170,4 +170,7 @@ void menu(infoAviao* dados) {
 
 		LeaveCriticalSection(&dados->criticalSectionAviao);
 	}
+
+
+	_tprintf(L"Sai dos comandos!\n\n");
 }

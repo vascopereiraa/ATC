@@ -17,6 +17,6 @@ BOOL verificaRaioAero(TCHAR* nomeAero, const int* coordX, const int* coordY, con
 void imprimeListaAeroporto(const aeroporto* lista, const int tamLista);
 aeroporto* inicializaListaAeroportos(int tamLista);
 BOOL adicionaAero(aeroporto* lista, int* indiceAero, TCHAR* nomeAero, const int* coordX, const int* coordY);
-TCHAR listaAero(const aeroporto* lista, const int tamLista);
+TCHAR* listaAero(const aeroporto* lista, const int tamLista);
 
 #endif

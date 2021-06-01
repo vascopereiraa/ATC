@@ -84,7 +84,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 				}
 			}
 #ifdef DEBUG
-			Sleep(3000 / av->velocidade);   // Aplica velocidade mais lenta para maior visibilidade de outputs
+			Sleep(1000 / av->velocidade);   // Aplica velocidade mais lenta para maior visibilidade de outputs
 			_tprintf(L"\nAtual x: [%i] Atual y: [%i]\tDestino x: [%i] Destino y: [%i]\tProxima x: [%i] Proxima y: [%i]\n",
 				av->atuais.posX, av->atuais.posY, av->destino.posX, av->destino.posY, av->proxCoord.posX, av->proxCoord.posY);
 #else

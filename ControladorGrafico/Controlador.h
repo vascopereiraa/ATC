@@ -14,6 +14,10 @@ typedef struct {
 	HDC hdcDB;
 	HBITMAP hbDB;
 	HDC hdc;
+	int xPos;
+	int yPos;
+	BOOL descAero;
+	BOOL descAviao;
 } Pintor;
 
 typedef struct {
