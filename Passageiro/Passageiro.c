@@ -8,7 +8,6 @@
 
 DWORD WINAPI ThreadEscritor(LPVOID);
 
-
 int _tmain(int argc, LPTSTR argv[]) {
     TCHAR buf[MSGTEXT_SZ] = TEXT("");
     int i = 0;
@@ -39,6 +38,14 @@ int _tmain(int argc, LPTSTR argv[]) {
         exit(-1);
     }
 
+    OVERLAPPED oOverlap;
+    HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (hEvent == NULL)
+        exit(-1);
+    ZeroMemory(&oOverlap, sizeof(OVERLAPPED));
+    ResetEvent(hEvent);
+    oOverlap.hEvent = hEvent;
+
     _tprintf(TEXT("[LEITOR] Ligação ao pipe do controlador... (CreateFile)\n"));
     passag.hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
@@ -61,39 +68,54 @@ int _tmain(int argc, LPTSTR argv[]) {
 
     _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
     // Criar thread para escrever no pipe para terminar
+    DWORD fSuccess;
     while (passag.sair) {
-        if (!ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL)) {
-            if (passag.sair != 3)
+        fSuccess = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
+        /*    if (passag.sair != 3)
                 _tprintf(L"Erro na leitura do pipe!\n");
             break;
-        }
+        }*/
         //ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
         /*if (!ret || !numBytesLidos) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
             break;
         }*/
 
-        if(passag.sair == 1){
-            _tprintf(L"Não existe o aeroporto de Origem!\n");
-            TerminateThread(hThread,NULL);
-            break;
-        }
-        if (passag.sair == 2) {
-            _tprintf(L"Não existe o aeroporto de Destino!\n");
-            TerminateThread(hThread, NULL);
-            break;
-        }
-        if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
-            _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
-        }
-        if (!_tcscmp(passag.fraseInfo, L"Em Viagem")) {
-            _tprintf(L"Em viagem nas Coord x: [%d] Coord y: [%d]\n", passag.coordAtuais.posX, passag.coordAtuais.posY);
-        }
-        if (!_tcscmp(passag.fraseInfo, L"Chegou ao destino")) {
-            _tprintf(L"Passageiro chegou ao destino [%s] com coordenadas x: [%d] y: [%d] no avião %d", passag.aeroDestino,passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
-            TerminateThread(hThread, NULL);
-            break;
-        }
+        _tprintf(L"\n\nAntes do Evento\n\n");
+        WaitForSingleObject(hEvent, INFINITE);
+
+        // if (!fSuccess || numBytesLidos < sizeof(passageiro)) {
+
+            GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
+            _tprintf(L"\n\nDepois do Evento\n\n");
+
+            if (passag.sair == 1) {
+                _tprintf(L"Não existe o aeroporto de Origem!\n");
+                TerminateThread(hThread, NULL);
+                break;
+            }
+            if (passag.sair == 2) {
+                _tprintf(L"Não existe o aeroporto de Destino!\n");
+                TerminateThread(hThread, NULL);
+                break;
+            }
+            if (passag.sair == 3)
+                break;
+
+            if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
+                _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
+            }
+            if (!_tcscmp(passag.fraseInfo, L"Em Viagem")) {
+                _tprintf(L"Em viagem nas Coord x: [%d] Coord y: [%d]\n", passag.coordAtuais.posX, passag.coordAtuais.posY);
+            }
+            if (!_tcscmp(passag.fraseInfo, L"Chegou ao destino")) {
+                _tprintf(L"Passageiro chegou ao destino [%s] com coordenadas x: [%d] y: [%d] no avião %d", passag.aeroDestino, passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
+                TerminateThread(hThread, NULL);
+                break;
+            }
+        // }
+        // else
+        //     break;
     }
     if (passag.sair != 3) {
         DisconnectNamedPipe(passag.hPipe);
@@ -114,8 +136,14 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
     
     // Close handle para sair do read ?
     passag->sair = 3;
+
+    if (!WriteFile(passag->hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
+        _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
+        return 1;
+    }
+
     // Like this ? Fazer writefile a informar da morte do homem ao control ? Meh. check later
-    DisconnectNamedPipe(passag->hPipe);
+    // DisconnectNamedPipe(passag->hPipe);
     CloseHandle(passag->hPipe);
 
     return 0;

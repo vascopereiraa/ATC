@@ -8,30 +8,57 @@
 #include "Controlador.h"
 #include "Utils.h"
 
-BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const int* indiceAero) {
-
+BOOL verificaNomeAero(TCHAR* nome, const aeroporto* lista, const int* indiceAero) {
 	for (int i = 0; i < *indiceAero; i++) {
-		if (!(_tcscmp(lista[i].nome, aux.nome))) {
+		if (!(_tcscmp(lista[i].nome, nome))) {
 			return FALSE;
 		}
 	}
 	return TRUE;
 }
 
-BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos, const int* tamAeroportos) {
+BOOL verificaRaioAero(TCHAR* nomeAero, const int* coordX, const int* coordY, const aeroporto* listaAeroportos, const int* tamAeroportos) {
 	int x = 0, y = 0;
-	for (x = aux.localizacao.posX - 5; x < aux.localizacao.posX + 5; x++) {
-		for (y = aux.localizacao.posY - 5; y < aux.localizacao.posY + 5; y++) {
-			if (aux.localizacao.posX + x >= 0 && aux.localizacao.posY + y >= 0) {
+	for (x = *coordX - 5; x < *coordX + 5; x++) {
+		for (y = *coordY - 5; y < *coordY + 5; y++) {
+			if (*coordX + x >= 0 && *coordY + y >= 0) {
 				for (int i = 0; i < *tamAeroportos; ++i) {
-					if (aux.localizacao.posX + x == listaAeroportos[i].localizacao.posX &&
-						aux.localizacao.posY + y == listaAeroportos[i].localizacao.posY) {
+					if (*coordX + x == listaAeroportos[i].localizacao.posX &&
+						*coordY + y == listaAeroportos[i].localizacao.posY) {
 						return FALSE;
 					}
 				}
 			}
 		}
 	}
+	return TRUE;
+}
+
+BOOL adicionaAero(aeroporto* lista, int* indiceAero, TCHAR* nomeAero, const int* coordX, const int* coordY) {
+	aeroporto aux;
+	_tcscpy_s(aux.nome, STR_TAM, nomeAero);
+	aux.localizacao.posX = *coordX;
+	aux.localizacao.posY = *coordY;
+
+
+	if (*coordX > 1000 || *coordY > 1000) {
+		_tprintf(L"Posicao inacessivel!\n");
+		return FALSE;
+	}
+
+	//_tprintf(L"\n\nNome: %s posX: %i posY: %i\n\n", aux.nome, aux.localizacao.posX, aux.localizacao.posY);
+
+	if (!verificaNomeAero(nomeAero, lista, indiceAero)) {
+		_tprintf(L"Já existe um aeroporto com esse nome!\n");
+		return FALSE;
+	}
+
+	if (!verificaRaioAero(nomeAero, coordX, coordY, lista, indiceAero)) {
+		_tprintf(L"Já existe um aeroporto nessa posição ou num raio demasiado curto!\n");
+		return FALSE;
+	}
+
+	lista[(*indiceAero)++] = aux;
 	return TRUE;
 }
 
@@ -50,37 +77,4 @@ aeroporto* inicializaListaAeroportos(int tamLista) {
 	}
 	
 	return aeroportos;
-}
-
-BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando) {
-	aeroporto aux;
-	TCHAR* buffer = NULL,*token = NULL;
-	//Ignorar 1 palavra identificadora do comando!
-	token = _tcstok_s(comando, L" ", &buffer);
-
-	//_tprintf(L"\nString: %s\n\n", comando);
-	token = _tcstok_s(NULL, L" ", &buffer);
-	_tcscpy_s(&aux.nome, STR_TAM, token);
-	aux.localizacao.posX = _ttoi(_tcstok_s(NULL, L" ", &buffer));
-	aux.localizacao.posY = _ttoi(_tcstok_s(NULL, L" ", &buffer));
-
-	if (aux.localizacao.posX > 1000 || aux.localizacao.posY > 1000) {
-		_tprintf(L"Posicao inacessivel!\n");
-		return FALSE;
-	}
-
-	//_tprintf(L"\n\nNome: %s posX: %i posY: %i\n\n", aux.nome, aux.localizacao.posX, aux.localizacao.posY);
-
-	if (!verificaNomeAeroporto(aux, lista, indiceAero)) {
-		_tprintf(L"Já existe um aeroporto com esse nome!\n");
-		return FALSE;
-	}
-
-	if (!verificaRaioAeroporto(aux, lista, indiceAero)) {
-		_tprintf(L"Já existe um aeroporto nessa posição ou num raio demasiado curto!\n");
-		return FALSE;
-	}
-
-	lista[(*indiceAero)++] = aux;
-	return TRUE;
 }

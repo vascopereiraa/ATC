@@ -12,10 +12,10 @@ typedef struct {
 } aeroporto;
 
 // Funcoes de controlo dos aeroportos
-BOOL verificaNomeAeroporto(const aeroporto aux, const aeroporto* lista, const int* indiceAero);
-BOOL verificaRaioAeroporto(const aeroporto aux, const aeroporto* listaAeroportos, const int* tamAeroportos);
+BOOL verificaNomeAero(TCHAR* nome, const aeroporto* lista, const int* indiceAero);
+BOOL verificaRaioAero(TCHAR* nomeAero, const int* coordX, const int* coordY, const aeroporto* listaAeroportos, const int* tamAeroportos);
 void imprimeListaAeroporto(const aeroporto* lista, const int tamLista);
 aeroporto* inicializaListaAeroportos(int tamLista);
-BOOL adicionaAeroporto(aeroporto* lista, int* indiceAero, TCHAR* comando);
+BOOL adicionaAero(aeroporto* lista, int* indiceAero, TCHAR* nomeAero, const int* coordX, const int* coordY);
 
 #endif

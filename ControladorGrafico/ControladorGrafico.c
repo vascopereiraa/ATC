@@ -20,6 +20,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int, infoControlador*);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    CriarAeroporto(HWND, UINT, WPARAM, LPARAM);
 
 int displayInfo(HWND hWnd, infoControlador* dados);
 int displayInfoBitBlt(HWND hWnd, infoControlador* dados);
@@ -283,6 +284,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+            case IDM_CRIARAEROPORTO:
+                DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_CRIARAEROPORTO), hWnd, CriarAeroporto, dados);
+                break;
+            case IDM_LISTAR_AEROPORTOS:
+
+                break;
+            case IDM_LISTAR_AVIOES:
+
+                break;
+            case IDM_LISTAR_PASSAGEIROS:
+
+                break;
+
+            case IDM_COMUNICACAO:
+                
+                break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -335,6 +352,44 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
         }
         break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+// Message handler for CriarAeroporto box.
+INT_PTR CALLBACK CriarAeroporto(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static infoControlador* dados = NULL;
+    TCHAR nome[STR_TAM] = _TEXT("");
+    int posX;
+    int posY;
+    TCHAR help[512] = _TEXT("");
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        dados = (infoControlador*)lParam;
+        return (INT_PTR)TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case ID_CRIAR:
+            GetDlgItemText(hDlg, MAKEINTRESOURCE(IDC_NOMEAERO), nome, STR_TAM);
+            posX = GetDlgItemInt(hDlg, MAKEINTRESOURCE(IDC_COORDX), NULL, FALSE);
+            posY = GetDlgItemInt(hDlg, MAKEINTRESOURCE(IDC_COORDY), NULL, FALSE);
+            EnterCriticalSection(&dados->criticalSectionControl);
+            if (adicionaAero(dados->listaAeroportos, &dados->indiceAero, nome, &posX, &posY)) {
+                _stprintf_s(help, 512, L"nome = %s\tx = %d\ty = %d", dados->listaAeroportos[dados->indiceAero - 1].nome,
+                    dados->listaAeroportos[dados->indiceAero - 1].localizacao.posX, dados->listaAeroportos[dados->indiceAero - 1].localizacao.posY);
+                MessageBox(hDlg, help, "AERO ADD", MB_OK);        
+            }
+            else {
+                MessageBox(hDlg, L"ERROR", L"AERO ADD ERROR", MB_OK);
+                break;
+            }
+            LeaveCriticalSection(&dados->criticalSectionControl);
+        case IDCANCEL:
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
     }
     return (INT_PTR)FALSE;
 }

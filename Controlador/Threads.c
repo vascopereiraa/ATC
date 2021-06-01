@@ -359,6 +359,8 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 
 	// Disconecta de todos os pipes
 	for (int i = 0; i < MAX_PASSAG; i++) {
+		// Mandar mensagem para terminar os passageiros
+
 		if (!DisconnectNamedPipe(infoPassagPipes->hPipes[i].hPipeInst)) {
 			_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
 			return -1;
