@@ -13,6 +13,7 @@
 #define IDC_CONTROLADORGRAFICO          109
 #define IDR_MAINFRAME                   128
 #define IDD_CRIARAEROPORTO              129
+#define IDD_LISTA_AEROPORTOS            130
 #define IDC_NOMEAERO                    1000
 #define IDC_COORDX                      1001
 #define IDC_COORDY                      1002
@@ -21,6 +22,9 @@
 #define IDC_STATIC_X                    1005
 #define IDC_STATIC_Y                    1006
 #define IDC_STATIC_COORD                1007
+#define IDC_LIST_AEROPORTOS             1008
+#define IDC_BUTTON1                     1009
+#define IDC_LAERO_SAIR                  1009
 #define ID_COMANDOS_CRIARAEROPORTO      32771
 #define ID_COMANDOS_LISTAR              32772
 #define ID_LISTAR_AEROPORTOS            32773
@@ -43,9 +47,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1008
+#define _APS_NEXT_CONTROL_VALUE         1010
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
