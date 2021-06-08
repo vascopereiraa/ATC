@@ -51,6 +51,13 @@ int getPrimeiraPosVaziaPassag(listaPassag* listPassag) {
 	return -1;
 }
 
+int getPosPassag(passageiro aux, listaPassag* listaPassag) {
+	for (int i = 0; i < MAX_PASSAG; ++i) 
+		if (aux.idPassag == listaPassag[i].passag.idPassag)
+			return i;
+	return -1;
+}
+
 // Retorna 1 quando não existe aeroOrigem
 // Retorna 2 quando não existe aeroDestino
 // Retorna 0 quando existem ambos.

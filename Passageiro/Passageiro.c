@@ -66,7 +66,8 @@ int _tmain(int argc, LPTSTR argv[]) {
         return 1;
     }
 
-    _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino, passag.fraseInfo);
+    _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+        passag.fraseInfo, passag.indicePipe);
     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
     while (passag.sair) {
@@ -88,6 +89,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 
             GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
             _tprintf(L"\n\nDepois do Evento\n\n");
+
+            _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+                passag.fraseInfo, passag.indicePipe);
 
             if (passag.sair == 1) {
                 _tprintf(L"Não existe o aeroporto de Origem!\n");

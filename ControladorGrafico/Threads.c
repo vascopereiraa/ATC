@@ -10,6 +10,8 @@
 #include "Utils.h"
 #include "Passageiro.h"
 
+RECT rect = { 0, 0, 100, 100 };
+
 BOOL ConnectToNewClient(HANDLE hPipe, LPOVERLAPPED lpo)
 {
 	BOOL fConnected, fPendingIO = FALSE;
@@ -135,7 +137,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							atualizaCoordPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av);
-							InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
+							InvalidateRect(dados->pintor->hWnd, &rect, TRUE);
 							//UpdateWindow(dados->pintor->hWnd);
 							break;
 						case 1:		// Esta no aeroporto destino
@@ -145,7 +147,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
 							listaAvioes[pos].av.emViagem = FALSE;
 							informaPassagDestino(dados->infoPassagPipes, &listaAvioes[pos].av);
-							InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
+							InvalidateRect(dados->pintor->hWnd, &rect, TRUE);
 							break;
 						case 2:		// Posicao esta ocupada
 							listaAvioes[pos].av.isSobreposto = TRUE;
@@ -193,7 +195,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			}
 		}
 		if (alteraDisplay)
-			InvalidateRect(dados->pintor->hWnd, NULL, TRUE);
+			InvalidateRect(dados->pintor->hWnd, &rect, TRUE);
 
 		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
@@ -263,51 +265,52 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	BOOL fSuccess;
 	passageiro passagAux;
 	ZeroMemory(&passagAux, sizeof(passageiro));
-	while (1) {
+	while (!*(infoControl->terminaControlador)) {
 		_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
 		// Está a espera que seja aberto nova instancia de pipe
-		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
-		indice = iResult - WAIT_OBJECT_0;
-		// Reset
-		ResetEvent(infoPassagPipes->hEvents[indice]);
-		_tprintf(L"[CONTROL] Evento acionado nr: [%i] \n", indice);
-		if (indice < 0 || indice >(MAX_PASSAG - 1))
-		{
-			_tprintf(L"Index fora do range! \n");
-			return 0;
-		}
-		if (infoPassagPipes->hPipes[indice].fPendingIO) {
-			fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
-			switch (infoPassagPipes->hPipes[indice].dwState) {
-			// Aguardar conexão ainda
-			case CONNECTING_STATE:
-				if (!fSuccess)
-				{
-					_tprintf(L"Error %d.\n", GetLastError());
-					return 0;
-				}
-				_tprintf(L"\n1º switch: CONNECTING_STATE\n");
-				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
-				break;
-				// Pending read operation 
-			case READING_STATE:
-				if (!fSuccess || totalBytes == 0)
-				{
-					_tprintf(L"[ERROR] Reading\n");
-					continue;
-				}
-				_tprintf(L"\n1º switch: READING_STATE\n");
-				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
-				break;
-			case WRITING_STATE:
-				infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
-				_tprintf(L"\n1º switch: Writing state.\n");
-				break;
-			default:
-				_tprintf(L"Invalid pipe state.\n");
+		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 2000);
+		if (iResult == WAIT_OBJECT_0) {
+			indice = iResult - WAIT_OBJECT_0;
+			// Reset
+			ResetEvent(infoPassagPipes->hEvents[indice]);
+			_tprintf(L"[CONTROL] Evento acionado nr: [%i] \n", indice);
+			if (indice < 0 || indice >(MAX_PASSAG - 1))
+			{
+				_tprintf(L"Index fora do range! \n");
 				return 0;
 			}
-		}
+			if (infoPassagPipes->hPipes[indice].fPendingIO) {
+				fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
+				switch (infoPassagPipes->hPipes[indice].dwState) {
+					// Aguardar conexão ainda
+				case CONNECTING_STATE:
+					if (!fSuccess)
+					{
+						_tprintf(L"Error %d.\n", GetLastError());
+						return 0;
+					}
+					_tprintf(L"\n1º switch: CONNECTING_STATE\n");
+					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+					break;
+					// Pending read operation 
+				case READING_STATE:
+					if (!fSuccess || totalBytes == 0)
+					{
+						_tprintf(L"[ERROR] Reading\n");
+						continue;
+					}
+					_tprintf(L"\n1º switch: READING_STATE\n");
+					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+					break;
+				case WRITING_STATE:
+					infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
+					_tprintf(L"\n1º switch: Writing state.\n");
+					break;
+				default:
+					_tprintf(L"Invalid pipe state.\n");
+					return 0;
+				}
+			}
 			// The pipe state determines which operation to do next. 
 			switch (infoPassagPipes->hPipes[indice].dwState)
 			{
@@ -318,7 +321,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			case READING_STATE:
 				fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
 				_tprintf(L"2º switch: READING_STATE\n\n");
-				
+
 				// Caso seja a 1º conexão, nome ainda não está preenchido
 				if (passagAux.nomePassag[0] == '\0') {
 					_tprintf(L"\nPrimeiro connect: Sem dados ainda !\n\n");
@@ -355,16 +358,26 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					//_tprintf(L"Existe o aero [%d] para o passag [%d]\n", existeAero, passagAux.idPassag);
 				}
 				/*else {
-					_tprintf(L"Passageiro já existe !\n");
+					pos = getPosPassag(passagAux, listPass);
+					if (pos > -1) {
+						if (passagAux.sair == 3) {
+							listPass[pos].isFree = TRUE;
+							if (!DisconnectNamedPipe(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst)) {
+								_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
+								ExitProcess(-1);
+							}
+						}
+					}
 				}*/
 				break;
-				
+
 			default:
 				_tprintf(L"Invalid pipe state.\n");
 				return 0;
 			}
 
-		LeaveCriticalSection(&infoControl->criticalSectionControl);
+			LeaveCriticalSection(&infoControl->criticalSectionControl);
+		}
 	}
 
 	// Disconecta de todos os pipes
