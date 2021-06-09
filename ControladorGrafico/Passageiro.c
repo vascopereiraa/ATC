@@ -87,7 +87,7 @@ BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 					infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
 					infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
 					// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
-					infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
+					//infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
 					// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
 					if (!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
 						&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
@@ -113,7 +113,6 @@ void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 				infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
 				infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
 				// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
-				infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
 				// Escreve no pipe do respetivo passageiro.
 				if(!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
 					&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,

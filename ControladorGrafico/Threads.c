@@ -244,7 +244,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 		infoPassagPipes->hPipes[i].oOverLap.hEvent = infoPassagPipes->hEvents[i];
 
 		// Call the subroutine to connect to the new client
-
 		infoPassagPipes->hPipes[i].fPendingIO = ConnectToNewClient(
 			infoPassagPipes->hPipes[i].hPipeInst,
 			&infoPassagPipes->hPipes[i].oOverLap);
@@ -268,8 +267,8 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	while (!*(infoControl->terminaControlador)) {
 		_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
 		// Está a espera que seja aberto nova instancia de pipe
-		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 2000);
-		if (iResult == WAIT_OBJECT_0) {
+		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
+		if (iResult != WAIT_TIMEOUT) {
 			indice = iResult - WAIT_OBJECT_0;
 			// Reset
 			ResetEvent(infoPassagPipes->hEvents[indice]);
@@ -302,10 +301,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					_tprintf(L"\n1º switch: READING_STATE\n");
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
-				case WRITING_STATE:
-					infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
-					_tprintf(L"\n1º switch: Writing state.\n");
-					break;
 				default:
 					_tprintf(L"Invalid pipe state.\n");
 					return 0;
@@ -314,10 +309,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			// The pipe state determines which operation to do next. 
 			switch (infoPassagPipes->hPipes[indice].dwState)
 			{
-			case WRITING_STATE:
-				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
-				_tprintf(L"2º switch: Writing state.\n");
-				break;
 			case READING_STATE:
 				fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
 				_tprintf(L"2º switch: READING_STATE\n\n");
@@ -352,23 +343,37 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
 						listPass[pos].isFree = TRUE;
+						passagAux.sair = 0;
 						WriteFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
 						//_tprintf(L"Não existe o aero [%d] para o passag [%d] \n", existeAero, passagAux.idPassag);
 					}
 					//_tprintf(L"Existe o aero [%d] para o passag [%d]\n", existeAero, passagAux.idPassag);
 				}
-				/*else {
+				else {
 					pos = getPosPassag(passagAux, listPass);
 					if (pos > -1) {
 						if (passagAux.sair == 3) {
 							listPass[pos].isFree = TRUE;
-							if (!DisconnectNamedPipe(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst)) {
+							listPass[pos].passag.sair = 0;
+							_tprintf(L"Indice: %d", passagAux.indicePipe);
+							if (!DisconnectNamedPipe(infoPassagPipes->hPipes[passagAux.indicePipe].hPipeInst)) {
 								_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
-								ExitProcess(-1);
+								//ExitProcess(-1);
+
+							}
+							else {
+								_tprintf(L"Disconnected");
+								infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].fPendingIO = ConnectToNewClient(
+									infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst,
+									&infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].oOverLap);
+
+								infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].dwState = infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].fPendingIO ?
+									CONNECTING_STATE : // still connecting 
+									READING_STATE;     // ready to read 
 							}
 						}
 					}
-				}*/
+				}
 				break;
 
 			default:

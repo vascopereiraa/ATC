@@ -81,11 +81,10 @@ int _tmain(int argc, LPTSTR argv[]) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
             break;
         }*/
-
         _tprintf(L"\n\nAntes do Evento\n\n");
-        WaitForSingleObject(hEvent, INFINITE);
+        if (WaitForSingleObject(hEvent, 3000) != WAIT_TIMEOUT) {
 
-        // if (!fSuccess || numBytesLidos < sizeof(passageiro)) {
+            // if (!fSuccess || numBytesLidos < sizeof(passageiro)) {
 
             GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
             _tprintf(L"\n\nDepois do Evento\n\n");
@@ -117,15 +116,27 @@ int _tmain(int argc, LPTSTR argv[]) {
                 TerminateThread(hThread, NULL);
                 break;
             }
+        }
+        if (passag.sair == 3)
+            break;
         // }
         // else
         //     break;
     }
+
+
+    if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
+        _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
+        return 1;
+    }
+    else {
+        _tprintf(L"Escrevi no pipe");
+    }
+
     if (passag.sair != 3) {
         DisconnectNamedPipe(passag.hPipe);
         CloseHandle(passag.hPipe);
     }
-    Sleep(200);
     return 0;
 }
 
@@ -141,14 +152,14 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
     // Close handle para sair do read ?
     passag->sair = 3;
 
-    if (!WriteFile(passag->hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
+    /*if (!WriteFile(passag->hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
-    }
+    }*/
 
     // Like this ? Fazer writefile a informar da morte do homem ao control ? Meh. check later
     // DisconnectNamedPipe(passag->hPipe);
-    CloseHandle(passag->hPipe);
+    /*CloseHandle(passag->hPipe);*/
 
     return 0;
 }
