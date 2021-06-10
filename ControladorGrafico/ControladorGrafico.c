@@ -295,9 +295,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_CRIARAEROPORTO:
                 DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_CRIARAEROPORTO), hWnd, CriarAeroporto, dados);
                 break;
-            case IDM_LISTAR_AEROPORTOS:
+            /*case IDM_LISTAR_AEROPORTOS:
                 _tcscpy_s(listaAux, 7000, listaAero(dados->listaAeroportos, dados->indiceAero));
                 MessageBox(hWnd, listaAux, L"Listagem de Aeroportos", MB_OK);
+                break;*/
+            case IDM_LISTAR_AEROPORTOS:
+                DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_LISTA_AEROPORTOS), hWnd, ListarAeroportos, dados);
                 break;
             case IDM_LISTAR_AVIOES:
                _tcscpy_s(listaAux, 7000, listaAv(dados->listaAvioes,dados->tamAvioes));
@@ -326,7 +329,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 LeaveCriticalSection(&dados->criticalSectionControl);
                 break;
             }
-
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -424,7 +426,7 @@ INT_PTR CALLBACK CriarAeroporto(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 MessageBox(hDlg, help, L"AERO ADD", MB_OK);
             }
             else {
-                MessageBox(hDlg, L"ERROR", L"AERO ADD ERROR", MB_OK);
+                MessageBox(hDlg, L"ERROR", L"[ERROR]", MB_OK);
                 break;
             }
             LeaveCriticalSection(&dados->criticalSectionControl);
@@ -440,20 +442,38 @@ INT_PTR CALLBACK CriarAeroporto(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 // Message handler for CriarAeroporto box.
 INT_PTR CALLBACK ListarAeroportos(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static infoControlador* dados = NULL;
-    TCHAR nome[STR_TAM] = _TEXT("");
-    int posX;
-    int posY;
-    TCHAR help[512] = _TEXT("");
     switch (message)
     {
     case WM_INITDIALOG:
-        dados = (infoControlador*)lParam;
+        SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)lParam);
+        infoControlador* dados = (infoControlador*)lParam;
+        HWND hWndListBox = GetDlgItem(hDlg, IDC_LISTBOX_AERO);
+        for (int i = 0; i < dados->indiceAero; ++i) {
+            int pos = (int)SendMessage(hWndListBox, LB_ADDSTRING, 0, (LPARAM)dados->listaAeroportos[i].nome);
+            SendMessage(hWndListBox, LB_SETITEMDATA, pos, (LPARAM)i);
+        }
+        SetFocus(hWndListBox);
         return (INT_PTR)TRUE;
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IDCANCEL:
+        case IDC_LAERO_SAIR:
             EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        case IDC_LIST_AEROPORTOS:
+            switch (HIWORD(wParam)) {
+            case CBN_SELCHANGE:
+            {
+                infoControlador* dados = (infoControlador*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+                HWND hWndListBox = GetDlgItem(hDlg, IDC_LISTBOX_AERO);
+                int item = (int)SendMessage(hWndListBox, LB_GETCURSEL, 0, 0);
+                int i = (int)SendMessage(hWndListBox, LB_GETITEMDATA, item, 0);
+                TCHAR string[STR_TAM] = _TEXT("");
+                _stprintf_s(string, STR_TAM, L"Nome: %s\nCoordendas:\nx = %d\ty = %d\n",
+                    dados->listaAeroportos[i].nome, dados->listaAeroportos[i].localizacao.posX, dados->listaAeroportos[i].localizacao.posY);
+                SetDlgItemText(hDlg, IDC_INFO_AEROPORTO, string);
+            }
+            }
             return (INT_PTR)TRUE;
         }
     }

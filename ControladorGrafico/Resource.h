@@ -24,7 +24,9 @@
 #define IDC_STATIC_Y                    1006
 #define IDC_STATIC_COORD                1007
 #define IDC_LIST_AEROPORTOS             1008
+#define IDC_LISTBOX_AERO                1008
 #define IDC_LAERO_SAIR                  1009
+#define IDC_INFO_AEROPORTO              1010
 #define ID_COMANDOS_CRIARAEROPORTO      32771
 #define ID_COMANDOS_LISTAR              32772
 #define ID_LISTAR_AEROPORTOS            32773
@@ -57,7 +59,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32794
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
