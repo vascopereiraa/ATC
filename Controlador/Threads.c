@@ -96,6 +96,13 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							debug(L"Nao foi possivel abrir a mem do av");
 							listaAvioes[pos].isFree = TRUE;
 						}
+							for (int i = 0; i < dados->tamAvioes - 1; ++i) {
+								if (!listaAvioes[i].isFree) {
+									_tprintf(L"\n\nVou rebentar %i\n\n", i);
+									_tprintf(L"ID: %d Aero Origem: %s Aero Destino: %s Velocidade %i\n",
+										listaAvioes[i].av.procID, listaAvioes[i].av.aeroOrigem, listaAvioes[i].av.aeroDestino, listaAvioes[i].av.velocidade);
+								}
+							}
 					}
 				}
 			}
@@ -210,6 +217,38 @@ void WINAPI threadTimer(LPVOID lpParam) {
 	debug(L"Terminei - ThreadTimer");
 	}
 
+
+
+TCHAR* listaPass(const listaPassag* lista) {
+	TCHAR lstAux[1000] = _TEXT(" ");
+	TCHAR lstPas[1000] = _TEXT(" ");
+	for (int i = 0; i < MAX_PASSAG; ++i) {
+		if (!lista[i].isFree) {
+			_tprintf(L"\n\nANTEEEEEEEEEEES:           ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n\n",
+				lista[i].passag.idPassag, lista[i].passag.nomePassag, lista[i].passag.aeroOrigem, lista[i].passag.aeroDestino);
+
+			_stprintf_s(lstAux, 1000, L"ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n",
+				lista[i].passag.idPassag, lista[i].passag.nomePassag, lista[i].passag.aeroOrigem, lista[i].passag.aeroDestino);
+			_tcscat_s(lstPas, 1000, lstAux);
+			strcpy_s(lstAux,1,_TEXT(""));
+
+		}
+	}
+	return lstPas;
+}
+
+//TCHAR* listaAero(const aeroporto* lista, const int tamLista) {
+//	TCHAR lstAux[500] = _TEXT(" ");
+//	TCHAR lstAero[500] = _TEXT(" ");
+//	for (int i = 0; i < tamLista - 1; ++i) {
+//		_stprintf_s(lstAux, 500, L"Aeroporto: %s Localização x: %d y: %d\n",
+//			lista[i].nome, lista[i].localizacao.posX, lista[i].localizacao.posY);
+//		_tcscat_s(lstAero, 100, lstAux);
+//	}
+//	return lstAero;
+//}
+
+
 DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
 	InfoPassagPipes* infoPassagPipes = infoControl->infoPassagPipes;
@@ -274,11 +313,12 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	while (!*(infoControl->terminaControlador)) {
 		_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
 		// Está a espera que seja aberto nova instancia de pipe
+		//iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
 		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
 		if (iResult != WAIT_TIMEOUT) {
 			indice = iResult - WAIT_OBJECT_0;
 			// Reset
-			ResetEvent(infoPassagPipes->hEvents[indice]);
+			//ResetEvent(infoPassagPipes->hEvents[indice]);
 			_tprintf(L"[CONTROL] Evento acionado nr: [%i] \n", indice);
 			if (indice < 0 || indice >(MAX_PASSAG - 1))
 			{
@@ -335,6 +375,14 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
 					continue;
 				}*/
+
+				/*DWORD dwErr = GetLastError();
+				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+				{
+					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
+					continue;
+				}*/
+
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
 					_tprintf(L"Vou criar um passageiro novo: %d\n", passagAux.idPassag);
@@ -346,6 +394,10 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						listPass[pos].isFree = FALSE;
 					}
 					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
+					_tprintf(L"\n\nDados do passag: %d %s %s %s\n\n", listPass[pos].passag.idPassag, listPass[pos].passag.nomePassag, listPass[pos].passag.aeroOrigem, listPass[pos].passag.aeroDestino);
+					listaPass(listPass);
+					_tprintf(L"\n\n");
+					
 					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
@@ -363,10 +415,10 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 							listPass[pos].isFree = TRUE;
 							listPass[pos].passag.sair = 0;
 							_tprintf(L"Indice: [%d]", listPass[pos].passag.indicePipe);
+							FlushFileBuffers(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst);
 							if (!DisconnectNamedPipe(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst)) {
 								_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
 								//ExitProcess(-1);
-
 							} else {
 								_tprintf(L"Disconnected");
 								// Isto deveria de colocar a instância disponivel de novo, no entanto, não funciona :(

@@ -275,7 +275,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, infoControlador* infoContro
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     infoControlador* dados = (infoControlador*)GetWindowLongPtr(hWnd, 0);
-    TCHAR listaAux[1000] = _TEXT(" ");
+    TCHAR listaAux[7000] = _TEXT(" ");
     int indice = -1;
 
     switch (message)
@@ -296,19 +296,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_CRIARAEROPORTO), hWnd, CriarAeroporto, dados);
                 break;
             case IDM_LISTAR_AEROPORTOS:
-                _tcscpy_s(listaAux, 1000, listaAero(dados->listaAeroportos, dados->indiceAero));
+                _tcscpy_s(listaAux, 7000, listaAero(dados->listaAeroportos, dados->indiceAero));
                 MessageBox(hWnd, listaAux, L"Listagem de Aeroportos", MB_OK);
                 break;
             case IDM_LISTAR_AVIOES:
-
+               _tcscpy_s(listaAux, 7000, listaAv(dados->listaAvioes,dados->tamAvioes));
+                MessageBox(hWnd, listaAux, L"Listagem de Avioes", MB_OK);
                 break;
             case IDM_LISTAR_PASSAGEIROS:
-
+                _tcscpy_s(listaAux, 7000, listaPass(dados->infoPassagPipes->listPassag));
+                MessageBox(hWnd, listaAux, L"Listagem de Passageiros", MB_OK);
                 break;
 
-            case IDM_COMUNICACAO:
-                
+            case IDM_RETOMAR:
+            {
+                EnterCriticalSection(&dados->criticalSectionControl);
+                *(dados->suspendeNovosAvioes) = 0;
+                _stprintf_s(listaAux, 10, L"%d", *(dados->suspendeNovosAvioes));
+                MessageBox(hWnd, listaAux, L"Listagem de Passageiros", MB_OK);
+                LeaveCriticalSection(&dados->criticalSectionControl);
                 break;
+            }
+            case IDM_SUSPENDER:
+            {
+                EnterCriticalSection(&dados->criticalSectionControl);
+                *(dados->suspendeNovosAvioes) = 1;
+                _stprintf_s(listaAux, 10, L"%d", *(dados->suspendeNovosAvioes));
+                MessageBox(hWnd, listaAux, L"Listagem de Passageiros", MB_OK);
+                LeaveCriticalSection(&dados->criticalSectionControl);
+                break;
+            }
+
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -593,5 +611,6 @@ int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 	}
 
 	BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->hdcDB, 0, 0, SRCCOPY);
+	BitBlt(dados->pintor->hdcDB, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->hdcDB, 0, 0, SRCCOPY);
 	EndPaint(hWnd, &ps);
 }

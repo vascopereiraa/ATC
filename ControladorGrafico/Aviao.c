@@ -96,3 +96,17 @@ coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamA
 		}
 	return pos;
 }
+
+TCHAR* listaAv(const listaAviao* lista, const int tamLista) {
+	TCHAR lstAux[500] = _TEXT(" ");
+	TCHAR lstAv[7000] = _TEXT(" ");
+	for (int i = 0; i < tamLista - 1; ++i) {
+		if (!lista[i].isFree) {
+			_stprintf_s(lstAux, 500, L"ID: %d Aero Origem: %s Aero Destino: %s Velocidade %d\n",
+				lista[i].av.procID, lista[i].av.aeroOrigem, lista[i].av.aeroDestino, lista[i].av.velocidade);
+			_tcscat_s(lstAv, 7000, lstAux);
+
+		}
+	}
+	return lstAv;
+}

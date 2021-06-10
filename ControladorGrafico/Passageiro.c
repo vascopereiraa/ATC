@@ -74,6 +74,19 @@ int verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAer
 	return 2;
 }
 
+TCHAR* listaPass(const listaPassag* lista) {
+	TCHAR lstAux[500] = _TEXT(" ");
+	TCHAR lstPas[7000] = _TEXT(" ");
+	for (int i = 0; i < MAX_PASSAG - 1; ++i) {
+		if (!lista[i].isFree) {
+			_stprintf_s(lstAux, 7000, L"ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n",
+				lista[i].passag.idPassag, lista[i].passag.nomePassag, lista[i].passag.aeroOrigem, lista[i].passag.aeroDestino);
+			_tcscat_s(lstPas, 7000, lstAux);
+		}
+	}
+	return lstPas;
+}
+
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 	DWORD totalBytes;
 	for (int i = 0; i < MAX_PASSAG; i++) {
@@ -87,7 +100,7 @@ BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 					infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
 					infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
 					// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
-					//infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
+					infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
 					// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
 					if (!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
 						&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
@@ -113,6 +126,7 @@ void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 				infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
 				infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
 				// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
+				infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
 				// Escreve no pipe do respetivo passageiro.
 				if(!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
 					&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,

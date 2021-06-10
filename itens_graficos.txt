@@ -11,3 +11,13 @@ IDM_COMUNICACAO
 	IDC_NOMEAERO
 	IDC_COORDX
 	IDC_COORDY
+
+ - Dialog ListaPassageiros -> IDD_LISTA_PASSAG
+
+
+ - Suspender Comunicação -> IDM_COMUNICACAO
+ 	IDM_RETOMAR
+ 	IDM_SUSPENDER
+
+
+ todo: if lista vazia: mensagem a dizer que esta vazia

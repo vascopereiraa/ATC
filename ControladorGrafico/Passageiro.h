@@ -35,3 +35,4 @@ BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
 InfoPassagPipes* inicializaListaPassagPipes();
 void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
 void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av);
+TCHAR* listaPass(const listaPassag* lista);

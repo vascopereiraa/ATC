@@ -28,6 +28,7 @@ void imprimeListaAvioes(listaAviao* lista, int tamAvioes);
 int getIndiceAviao(aviao aux, listaAviao* listaAvioes, int tamAvioes);
 int verificaAvioesPosicao(aviao aux, aeroporto* listaAeroportos, int tamAeroportos, listaAviao* listaAvioes, int tamAvioes);
 coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamAeroportos);
+TCHAR* listaAv(const listaAviao* lista, const int tamLista);
 
 // Funcoes de Controlo da Memoria Partilhada do Avião
 BOOL abreMemoriaPartilhada(listaAviao* aviao);

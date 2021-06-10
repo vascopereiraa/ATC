@@ -81,7 +81,7 @@ int _tmain(int argc, LPTSTR argv[]) {
             _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
             break;
         }*/
-        _tprintf(L"\n\nAntes do Evento\n\n");
+        //_tprintf(L"\n\nAntes do Evento\n\n");
         if (WaitForSingleObject(hEvent, 3000) != WAIT_TIMEOUT) {
 
             // if (!fSuccess || numBytesLidos < sizeof(passageiro)) {
@@ -133,10 +133,10 @@ int _tmain(int argc, LPTSTR argv[]) {
         _tprintf(L"Escrevi no pipe");
     }
 
-    if (passag.sair != 3) {
+    /*if (passag.sair != 3) {
         DisconnectNamedPipe(passag.hPipe);
         CloseHandle(passag.hPipe);
-    }
+    }*/
     return 0;
 }
 

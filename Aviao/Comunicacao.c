@@ -133,7 +133,7 @@ DWORD WINAPI threadViagem(LPVOID lpParam) {
 			_tprintf(L"Aceitação de novos aviões suspensa no controlador\n");
 			libertaDLL(dllLocation);
 			LeaveCriticalSection(&dados->criticalSectionAviao);
-			return 4;
+			ExitProcess(-1);
 		}
 
 		// Verifica se a movimentação foi feita com sucesso
