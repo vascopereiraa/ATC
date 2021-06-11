@@ -70,26 +70,32 @@ int verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAer
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 	DWORD totalBytes;
 	for (int i = 0; i < MAX_PASSAG; i++) {
-		if (!infoPassagPipe->listPassag[i].isFree) {
-			if (!_tcscmp(av->aeroOrigem, infoPassagPipe->listPassag[i].passag.aeroOrigem)) {
-				if (!_tcscmp(av->aeroDestino, infoPassagPipe->listPassag[i].passag.aeroDestino)) {
-					_tcscpy_s(infoPassagPipe->listPassag[i].passag.fraseInfo, STR_TAM, L"Vou embarcar");
-					infoPassagPipe->listPassag[i].passag.nrAviaoEmbarcado = av->procID;
-					_tprintf(L"\nVou embarcar o passageiro: [%d] nome: [%s]\n", infoPassagPipe->listPassag[i].passag.idPassag, infoPassagPipe->listPassag[i].passag.nomePassag);
-					// Atualizar coordenadas para aero origem
-					infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
-					infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
-					// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
-					infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
-					// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
-					if (!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
-						&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
-						&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap))
-					{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele. 
-						infoPassagPipe->listPassag[i].isFree = TRUE;
+		if (av->capMaxima > 0) {
+			av->capMaxima--;
+			if (!infoPassagPipe->listPassag[i].isFree) {
+				if (!_tcscmp(av->aeroOrigem, infoPassagPipe->listPassag[i].passag.aeroOrigem)) {
+					if (!_tcscmp(av->aeroDestino, infoPassagPipe->listPassag[i].passag.aeroDestino)) {
+						_tcscpy_s(infoPassagPipe->listPassag[i].passag.fraseInfo, STR_TAM, L"Vou embarcar");
+						infoPassagPipe->listPassag[i].passag.nrAviaoEmbarcado = av->procID;
+						_tprintf(L"\nVou embarcar o passageiro: [%d] nome: [%s]\n", infoPassagPipe->listPassag[i].passag.idPassag, infoPassagPipe->listPassag[i].passag.nomePassag);
+						// Atualizar coordenadas para aero origem
+						infoPassagPipe->listPassag[i].passag.coordAtuais.posX = av->atuais.posX;
+						infoPassagPipe->listPassag[i].passag.coordAtuais.posY = av->atuais.posY;
+						// Mudar estado do pipe para WRITING STATE para não ler na thread novamente do pipe
+						infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
+						// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
+						if (!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
+							&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
+							&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap))
+						{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele. 
+							infoPassagPipe->listPassag[i].isFree = TRUE;
+						}
 					}
 				}
 			}
+		}
+		else {
+			return;
 		}
 	}
 }

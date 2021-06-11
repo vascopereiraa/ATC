@@ -7,6 +7,7 @@
 #define MSGTEXT_SZ 256
 
 DWORD WINAPI ThreadEscritor(LPVOID);
+DWORD WINAPI ThreadEspera(LPVOID);
 
 int _tmain(int argc, LPTSTR argv[]) {
     TCHAR buf[MSGTEXT_SZ] = TEXT("");
@@ -15,14 +16,24 @@ int _tmain(int argc, LPTSTR argv[]) {
     DWORD numBytesLidos;
 
     passageiro passag;
-    _tcscpy_s(&passag.aeroOrigem, STR_TAM, L"porto");
-    _tcscpy_s(&passag.aeroDestino, STR_TAM, L"lisboa");
-    _tcscpy_s(&passag.nomePassag, STR_TAM, L"joao");
-    _tcscpy_s(&passag.fraseInfo, STR_TAM, L"frase teste");
+
+    if (argc < 4 || argc > 5) {
+        _tprintf(L"[ERRO] Indique como argumentos: Origem, Destino, Nome e opcionalmente o tempo a aguardar\n ");
+        return -1;
+    }
+    _tcscpy_s(passag.aeroOrigem, STR_TAM, argv[1]);
+    _tcscpy_s(passag.aeroDestino, STR_TAM, argv[2]);
+    _tcscpy_s(passag.nomePassag, STR_TAM, argv[3]);
+    if(argc == 5)
+       passag.tempoEspera = _ttoi(argv[4]);
+    else
+       passag.tempoEspera = 0;
+
     passag.idPassag = GetCurrentProcessId();
     passag.coordAtuais.posX = -1;
     passag.coordAtuais.posY = -1;
-    passag.tempoEspera = 10000;
+    passag.sairPassag = 0;
+    passag.sair = 0;
 
 #ifdef UNICODE 
     _setmode(_fileno(stdin), _O_WTEXT);
@@ -55,11 +66,21 @@ int _tmain(int argc, LPTSTR argv[]) {
     }
     _tprintf(TEXT("[LEITOR] Liguei-me...\n"));
 
-    HANDLE hThread = CreateThread(NULL, 0, ThreadEscritor, &passag, 0, NULL);
+    DWORD threadID;
+    HANDLE hThread = CreateThread(NULL, 0, ThreadEscritor, &passag, 0, &threadID);
     if (hThread == NULL) {
         _tprintf(TEXT("[ERRO] Criar a Thread! !\n"));
         return -1;
     }
+    HANDLE hThread_Espera = NULL;
+    if (argc == 5) {
+        hThread_Espera = CreateThread(NULL, 0, ThreadEspera, &passag, 0, NULL);
+        if (hThread_Espera == NULL) {
+            _tprintf(TEXT("[ERRO] Criar a Thread! !\n"));
+            return -1;
+        }
+    }
+
     // Escrita no pipe para informar controlador sobre a sua existência com envio da sua estrutura
     if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
@@ -70,27 +91,20 @@ int _tmain(int argc, LPTSTR argv[]) {
         passag.fraseInfo, passag.indicePipe);
     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
-    while (passag.sair) {
-        fSuccess = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
-        /*    if (passag.sair != 3)
-                _tprintf(L"Erro na leitura do pipe!\n");
-            break;
-        }*/
-        //ret = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, NULL);
-        /*if (!ret || !numBytesLidos) {
-            _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, numBytesLidos);
-            break;
-        }*/
-        //_tprintf(L"\n\nAntes do Evento\n\n");
-        if (WaitForSingleObject(hEvent, 3000) != WAIT_TIMEOUT) {
+    while (passag.sair != 3) {
 
-            // if (!fSuccess || numBytesLidos < sizeof(passageiro)) {
+        ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
+
+        if (WaitForSingleObject(hEvent, 3000) != WAIT_TIMEOUT) {
+        
+            if (OpenThread(THREAD_ALL_ACCESS, NULL, threadID) == NULL)
+            return;
 
             GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
             _tprintf(L"\n\nDepois do Evento\n\n");
 
-            _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
-                passag.fraseInfo, passag.indicePipe);
+            _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+                passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
 
             if (passag.sair == 1) {
                 _tprintf(L"Não existe o aeroporto de Origem!\n");
@@ -102,8 +116,15 @@ int _tmain(int argc, LPTSTR argv[]) {
                 TerminateThread(hThread, NULL);
                 break;
             }
-            if (passag.sair == 3)
-                break;
+            if (passag.sair == 3 || passag.sairPassag == 1) {
+                _tprintf(L"\n\nEntrei 6\n\n");
+                 break;
+            }
+
+            if (passag.sairPassag == 0 && argc == 5) {
+                _tprintf(L"\n\nEntrei 7\n\n");
+                TerminateThread(hThread_Espera, NULL);
+            }
 
             if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
                 _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
@@ -117,26 +138,21 @@ int _tmain(int argc, LPTSTR argv[]) {
                 break;
             }
         }
-        if (passag.sair == 3)
+        if (passag.sair == 3 || passag.sairPassag == 1) {
+            _tprintf(L"\n\nEntrei 5\n\n");
             break;
-        // }
-        // else
-        //     break;
+        }
     }
 
 
     if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
-    }
-    else {
+    }else {
         _tprintf(L"Escrevi no pipe");
     }
-
-    /*if (passag.sair != 3) {
-        DisconnectNamedPipe(passag.hPipe);
-        CloseHandle(passag.hPipe);
-    }*/
+    FlushFileBuffers(passag.hPipe);
+    CloseHandle(passag.hPipe);
     return 0;
 }
 
@@ -149,17 +165,18 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
         passag->fraseInfo[_tcslen(passag->fraseInfo) - 1] = '\0';
     } while (_tcscmp(passag->fraseInfo, TEXT("fim")));
     
-    // Close handle para sair do read ?
     passag->sair = 3;
+    passag->sairPassag = 3;
+    return 0;
+}
 
-    /*if (!WriteFile(passag->hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
-        _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
-        return 1;
-    }*/
 
-    // Like this ? Fazer writefile a informar da morte do homem ao control ? Meh. check later
-    // DisconnectNamedPipe(passag->hPipe);
-    /*CloseHandle(passag->hPipe);*/
-
+DWORD WINAPI ThreadEspera(LPVOID lparam)
+{
+    passageiro* passag = (passageiro*)lparam;
+    _tprintf(L"\n\nEntrei 3\n\n");
+    Sleep(passag->tempoEspera);
+    passag->sairPassag = 3;
+    
     return 0;
 }

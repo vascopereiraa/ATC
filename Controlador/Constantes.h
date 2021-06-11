@@ -24,7 +24,7 @@
 
 // Passageiro
 #define PIPE_NAME TEXT("\\\\.\\pipe\\TrabalhoPratico")
-#define MAX_PASSAG 30
+#define MAX_PASSAG 3
 
 // Registry
 #define MAX_AIRPORT 20

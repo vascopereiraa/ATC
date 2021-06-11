@@ -16,3 +16,7 @@ IDM_COMUNICACAO
 	IDC_LISTBOX_AERO
 	IDC_INFO_AEROPORTO
 	IDC_LAERO_SAIR
+
+
+
+- quando aviao abandona, a.k.a  9/11, passageiros tambem morrem !!! avisar passageiros para sairemmmm

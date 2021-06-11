@@ -17,8 +17,6 @@ int getPosPassag(passageiro aux, listaPassag* listaPassag) {
 	return -1;
 }
 
-RECT rect = { 0, 0, 100, 100 };
-
 BOOL ConnectToNewClient(HANDLE hPipe, LPOVERLAPPED lpo)
 {
 	BOOL fConnected, fPendingIO = FALSE;
@@ -249,6 +247,22 @@ TCHAR* listaPass(const listaPassag* lista) {
 //}
 
 
+void DisconnectAndReconnect(InfoPassagPipes* infoPassagPipes, int indice) {
+	if (!DisconnectNamedPipe(infoPassagPipes->hPipes[indice].hPipeInst)) {
+		_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
+		return;
+	}
+
+	infoPassagPipes->hPipes[indice].fPendingIO = ConnectToNewClient(
+		infoPassagPipes->hPipes[indice].hPipeInst,
+		&infoPassagPipes->hPipes[indice].oOverLap);
+
+	infoPassagPipes->hPipes[indice].dwState = infoPassagPipes->hPipes[indice].fPendingIO ?
+		CONNECTING_STATE : // still connecting 
+		READING_STATE;     // ready to read
+}
+
+
 DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
 	InfoPassagPipes* infoPassagPipes = infoControl->infoPassagPipes;
@@ -299,27 +313,17 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			READING_STATE;     // ready to read 
 	}
 	LeaveCriticalSection(&infoControl->criticalSectionControl);
-	/*hThread = CreateThread(NULL, 0, threadLeitorNamedPipes, &arrNamedPipes, 0, NULL);
-	if (hThread == NULL) {
-		_tprintf(TEXT("[ERRO] Criar a Thread para ler do namedPipe! !\n"));
-		return -1;
-	}*/
-
-	// Aguardar ligação nova, e atribuir pipe a esse leitor
-	//while (!arrNamedPipes->terminar && arrNamedPipes->numPassag < INSTANCES) {
+	
 	BOOL fSuccess;
 	passageiro passagAux;
 	ZeroMemory(&passagAux, sizeof(passageiro));
 	while (!*(infoControl->terminaControlador)) {
-		_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
-		// Está a espera que seja aberto nova instancia de pipe
-		//iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
-		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
+		//_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
+		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
 		if (iResult != WAIT_TIMEOUT) {
 			indice = iResult - WAIT_OBJECT_0;
 			// Reset
-			//ResetEvent(infoPassagPipes->hEvents[indice]);
-			_tprintf(L"[CONTROL] Evento acionado nr: [%i] \n", indice);
+			ResetEvent(infoPassagPipes->hEvents[indice]);
 			if (indice < 0 || indice >(MAX_PASSAG - 1))
 			{
 				_tprintf(L"Index fora do range! \n");
@@ -335,7 +339,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						_tprintf(L"Error %d.\n", GetLastError());
 						return 0;
 					}
-					_tprintf(L"\n1º switch: CONNECTING_STATE\n");
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
 					// Pending read operation 
@@ -345,11 +348,9 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						_tprintf(L"[ERROR] Reading\n");
 						continue;
 					}
-					_tprintf(L"\n1º switch: READING_STATE\n");
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
 				default:
-					_tprintf(L"Invalid pipe state.\n");
 					return 0;
 				}
 			}
@@ -358,34 +359,25 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			{
 			case READING_STATE:
 				fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-				_tprintf(L"2º switch: READING_STATE\n\n");
 
 				// Caso seja a 1º conexão, nome ainda não está preenchido
-				if (passagAux.nomePassag[0] == '\0') {
+				/*DWORD dwErr = GetLastError();
+				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+				{
+					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
+					continue;
+				}*/
+				/*if (passagAux.nomePassag[0] == '\0') {
 					_tprintf(L"\nPrimeiro connect: Sem dados ainda !\n\n");
 					break;
 				}
 				else {
 					_tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroOrigem, passagAux.aeroDestino, passagAux.fraseInfo);
-				}
+				}*/
 				// The read operation is still pending. 
-				/*DWORD dwErr = GetLastError();
-				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
-				{
-					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
-					continue;
-				}*/
-
-				/*DWORD dwErr = GetLastError();
-				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
-				{
-					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
-					continue;
-				}*/
 
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
-					_tprintf(L"Vou criar um passageiro novo: %d\n", passagAux.idPassag);
 					pos = getPrimeiraPosVaziaPassag(listPass);
 					if (pos > -1) {
 						debug(L"Novo Passag");
@@ -394,19 +386,14 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						listPass[pos].isFree = FALSE;
 					}
 					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
-					_tprintf(L"\n\nDados do passag: %d %s %s %s\n\n", listPass[pos].passag.idPassag, listPass[pos].passag.nomePassag, listPass[pos].passag.aeroOrigem, listPass[pos].passag.aeroDestino);
 					listaPass(listPass);
-					_tprintf(L"\n\n");
-					
 					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
 						listPass[pos].isFree = TRUE;
 						passagAux.sair = 0;
 						WriteFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-						//_tprintf(L"Não existe o aero [%d] para o passag [%d] \n", existeAero, passagAux.idPassag);
 					}
-					//_tprintf(L"Existe o aero [%d] para o passag [%d]\n", existeAero, passagAux.idPassag);
 				}
 				else {
 					pos = getPosPassag(passagAux, listPass);
@@ -414,32 +401,16 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						if (passagAux.sair == 3) {
 							listPass[pos].isFree = TRUE;
 							listPass[pos].passag.sair = 0;
-							_tprintf(L"Indice: [%d]", listPass[pos].passag.indicePipe);
 							FlushFileBuffers(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst);
-							if (!DisconnectNamedPipe(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst)) {
-								_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
-								//ExitProcess(-1);
-							} else {
-								_tprintf(L"Disconnected");
-								// Isto deveria de colocar a instância disponivel de novo, no entanto, não funciona :(
-								infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].fPendingIO = ConnectToNewClient(
-									infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst,
-									&infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].oOverLap);
-
-								infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].dwState = infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].fPendingIO ?
-									CONNECTING_STATE : // still connecting 
-									READING_STATE;     // ready to read
-							}
+							DisconnectAndReconnect(infoPassagPipes, listPass[pos].passag.indicePipe);
 						}
 					}
 				}
 				break;
-
 			default:
 				_tprintf(L"Invalid pipe state.\n");
 				return 0;
 			}
-
 			LeaveCriticalSection(&infoControl->criticalSectionControl);
 		}
 	}
@@ -454,7 +425,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 		CloseHandle(infoPassagPipes->hEvents[i]);
 	}
 }
-
 
 void menu(infoControlador * infoControl) {
 	TCHAR comando[STR_TAM], comandoAux[STR_TAM];
