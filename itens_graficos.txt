@@ -19,4 +19,6 @@ IDM_COMUNICACAO
 
 
 
-- quando aviao abandona, a.k.a  9/11, passageiros tambem morrem !!! avisar passageiros para sairemmmm
+- quando aviao abandona, passageiros tambem morrem !!! avisar passageiros para sairemmmm
+
+meter lista vazia quando não tem elementos

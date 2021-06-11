@@ -16,12 +16,13 @@ int _tmain(int argc, LPTSTR argv[]) {
     DWORD numBytesLidos;
 
     passageiro passag;
-    passag.sairPassag = (int*)malloc(sizeof(int));
+    /*passag.sairPassag = (int*)malloc(sizeof(int));
     if (passag.sairPassag == NULL) {
         _tprintf(L"[ERRO] Arranque do programa!\n");
         return 10;
-    }
+    }*/
 
+    passag.sairPassag = 0;
     if (argc < 4 || argc > 5) {
         _tprintf(L"[ERRO] Indique como argumentos: Origem, Destino, Nome e opcionalmente o tempo a aguardar\n ");
         return -1;
@@ -37,7 +38,6 @@ int _tmain(int argc, LPTSTR argv[]) {
     passag.idPassag = GetCurrentProcessId();
     passag.coordAtuais.posX = -1;
     passag.coordAtuais.posY = -1;
-    *(passag.sairPassag) = 0;
     passag.sair = 0;
 
 #ifdef UNICODE 
@@ -92,26 +92,17 @@ int _tmain(int argc, LPTSTR argv[]) {
         return 1;
     }
 
-    _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
-        passag.fraseInfo, passag.indicePipe);
+   // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+     //   passag.fraseInfo, passag.indicePipe);
+
     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
-    while (passag.sair != 3 && *(passag.sairPassag) != 1) {
-
-        // _tprintf(L"\n\nSAIR = %d\tSairPassag = %d\n\n", passag.sair, *passag.sairPassag);
-
+    while (passag.sair != 3 && (passag.sairPassag) != 1) {
         ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
-
-        if (WaitForSingleObject(hEvent, 3000) != WAIT_TIMEOUT) {
-        
-            if (OpenThread(THREAD_ALL_ACCESS, NULL, threadID) == NULL)
-            return;
-
+        if (WaitForSingleObject(hEvent, 6000) != WAIT_TIMEOUT) {
             GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
-            _tprintf(L"\n\nDepois do Evento\n\n");
-
-            _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
-                passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
+           // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+             //   passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
 
             if (passag.sair == 1) {
                 _tprintf(L"Não existe o aeroporto de Origem!\n");
@@ -124,12 +115,10 @@ int _tmain(int argc, LPTSTR argv[]) {
                 break;
             }
             if (passag.sair == 3 || passag.sairPassag == 1) {
-                // _tprintf(L"\n\nEntrei 6\n\n");
                  break;
             }
 
             if (passag.sairPassag == 0 && argc == 5) {
-                // _tprintf(L"\n\nEntrei 7\n\n");
                 TerminateThread(hThread_Espera, NULL);
             }
 
@@ -155,12 +144,9 @@ int _tmain(int argc, LPTSTR argv[]) {
     if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
-    }else {
-        _tprintf(L"Escrevi no pipe");
     }
-    FlushFileBuffers(passag.hPipe);
+
     CloseHandle(passag.hPipe);
-    // _tprintf(L"\n\nMesmo antes de sair\n\n");
     return 0;
 }
 
@@ -174,7 +160,7 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
     } while (_tcscmp(passag->fraseInfo, TEXT("fim")));
     
     passag->sair = 3;
-    *passag->sairPassag = 1;
+    passag->sairPassag = 1;
     return 0;
 }
 
@@ -182,9 +168,8 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
 DWORD WINAPI ThreadEspera(LPVOID lparam)
 {
     passageiro* passag = (passageiro*)lparam;
-    // _tprintf(L"\n\nEntrei 3\n\n");
     Sleep(passag->tempoEspera);
-    *passag->sairPassag = 1;
+    passag->sairPassag = 1;
     
     return 0;
 }

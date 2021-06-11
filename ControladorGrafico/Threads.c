@@ -129,6 +129,21 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	debug(L"Terminei - ThreadControlador");
 }
 
+void DestroyPassageiros(InfoPassagPipes* infoPassagPipe) {
+	DWORD totalBytes;
+	for (int i = 0; i < MAX_PASSAG; i++) {
+		if (!infoPassagPipe->listPassag[i].isFree) {
+			infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
+			infoPassagPipe->listPassag[i].passag.sair = 3;
+			// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
+			WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
+				&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
+				&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap);
+		}
+	}
+	
+}
+
 void WINAPI threadTimer(LPVOID lpParam) {
 	infoControlador* dados = (infoControlador*)lpParam;
 	listaAviao* listaAvioes = dados->listaAvioes;
@@ -148,6 +163,7 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			}
 			else {
 				if (!listaAvioes[i].isFree) {
+					DestroyPassageiros(dados->infoPassagPipes);
 					InvalidateRect(dados->pintor->hWnd, calculaRect(listaAvioes[i].av.atuais), TRUE);
 					listaAvioes[i].isFree = TRUE;
 					encerraMemoriaPartilhada(&listaAvioes[i].memAviao);
@@ -260,13 +276,15 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	BOOL fSuccess;
 	passageiro passagAux;
 	ZeroMemory(&passagAux, sizeof(passageiro));
+
 	while (!*(infoControl->terminaControlador)) {
-		//_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
+		debug(L"[CONTROL] Esperando ligação de um Passageiro.");
+		// Está a espera que seja aberto nova instancia de pipe
 		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
 		if (iResult != WAIT_TIMEOUT) {
 			indice = iResult - WAIT_OBJECT_0;
 			// Reset
-			ResetEvent(infoPassagPipes->hEvents[indice]);
+			//ResetEvent(infoPassagPipes->hEvents[indice]);
 			if (indice < 0 || indice >(MAX_PASSAG - 1))
 			{
 				_tprintf(L"Index fora do range! \n");
@@ -275,7 +293,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			if (infoPassagPipes->hPipes[indice].fPendingIO) {
 				fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
 				switch (infoPassagPipes->hPipes[indice].dwState) {
-				// Aguardar conexão ainda
+					// Aguardar conexão ainda
 				case CONNECTING_STATE:
 					if (!fSuccess)
 					{
@@ -284,7 +302,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					}
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
-				// Pending read operation 
+					// Pending read operation 
 				case READING_STATE:
 					if (!fSuccess || totalBytes == 0)
 					{
@@ -293,26 +311,36 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					}
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
+				case WRITING_STATE:
+					infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
+					break;
 				default:
+					_tprintf(L"Invalid pipe state.\n");
 					return 0;
 				}
 			}
 			// The pipe state determines which operation to do next. 
 			switch (infoPassagPipes->hPipes[indice].dwState)
 			{
+			case WRITING_STATE:
+				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+				break;
 			case READING_STATE:
 				ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
+				// Caso seja a 1º conexão, nome ainda não está preenchido
+				if (passagAux.nomePassag[0] == '\0')
+					break;
+
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
 					pos = getPrimeiraPosVaziaPassag(listPass);
 					if (pos > -1) {
-						debug(L"Novo Passag");
+						//debug(L"Novo Passag");
 						listPass[pos].passag = passagAux;
 						listPass[pos].passag.indicePipe = indice;
 						listPass[pos].isFree = FALSE;
 					}
 					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
-					listaPass(listPass);
 					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
@@ -333,10 +361,12 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					}
 				}
 				break;
+
 			default:
 				_tprintf(L"Invalid pipe state.\n");
 				return 0;
 			}
+
 			LeaveCriticalSection(&infoControl->criticalSectionControl);
 		}
 	}

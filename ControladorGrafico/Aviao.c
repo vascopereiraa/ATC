@@ -98,8 +98,8 @@ coordenadas obterCoordenadas(TCHAR* string, aeroporto* listaAeroportos, int tamA
 }
 
 TCHAR* listaAv(const listaAviao* lista, const int tamLista) {
-	TCHAR lstAux[500] = _TEXT(" ");
-	TCHAR lstAv[7000] = _TEXT(" ");
+	TCHAR lstAux[500] = _TEXT("");
+	TCHAR lstAv[7000] = _TEXT("");
 	for (int i = 0; i < tamLista - 1; ++i) {
 		if (!lista[i].isFree) {
 			_stprintf_s(lstAux, 500, L"ID: %d Aero Origem: %s Aero Destino: %s Velocidade %d\n",
@@ -107,6 +107,9 @@ TCHAR* listaAv(const listaAviao* lista, const int tamLista) {
 			_tcscat_s(lstAv, 7000, lstAux);
 
 		}
+	}
+	if (lstAv[0] == 0) {
+		_tcscpy_s(lstAv, 100, L"Não existem aviões ainda!");
 	}
 	return lstAv;
 }

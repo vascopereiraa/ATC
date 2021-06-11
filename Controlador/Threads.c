@@ -316,14 +316,16 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	
 	BOOL fSuccess;
 	passageiro passagAux;
-	ZeroMemory(&passagAux, sizeof(passageiro));
+	ZeroMemory(&passagAux, sizeof(passageiro)); 
+	
 	while (!*(infoControl->terminaControlador)) {
-		//_tprintf(L"[CONTROL] Esperando ligação de um Passageiro. \n");
+		debug(L"[CONTROL] Esperando ligação de um Passageiro.");
+		// Está a espera que seja aberto nova instancia de pipe
 		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
 		if (iResult != WAIT_TIMEOUT) {
 			indice = iResult - WAIT_OBJECT_0;
 			// Reset
-			ResetEvent(infoPassagPipes->hEvents[indice]);
+			//ResetEvent(infoPassagPipes->hEvents[indice]);
 			if (indice < 0 || indice >(MAX_PASSAG - 1))
 			{
 				_tprintf(L"Index fora do range! \n");
@@ -350,43 +352,37 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					}
 					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
+				case WRITING_STATE:
+					infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
+					break;
 				default:
+					_tprintf(L"Invalid pipe state.\n");
 					return 0;
 				}
 			}
 			// The pipe state determines which operation to do next. 
 			switch (infoPassagPipes->hPipes[indice].dwState)
 			{
-			case READING_STATE:
-				fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-
-				// Caso seja a 1º conexão, nome ainda não está preenchido
-				/*DWORD dwErr = GetLastError();
-				if (!fSuccess && (dwErr == ERROR_IO_PENDING))
-				{
-					infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
-					continue;
-				}*/
-				/*if (passagAux.nomePassag[0] == '\0') {
-					_tprintf(L"\nPrimeiro connect: Sem dados ainda !\n\n");
+				case WRITING_STATE:
+					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 					break;
-				}
-				else {
-					_tprintf(L"Recebi os seguintes dados:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\n\n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroOrigem, passagAux.aeroDestino, passagAux.fraseInfo);
-				}*/
-				// The read operation is still pending. 
-
+			case READING_STATE:
+				ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
+				_tprintf(L"Vai ser lida informação do pipe: [%d]\n", indice);
+				// Caso seja a 1º conexão, nome ainda não está preenchido
+				if (passagAux.nomePassag[0] == '\0') 
+					break;
+				
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
 					pos = getPrimeiraPosVaziaPassag(listPass);
 					if (pos > -1) {
-						debug(L"Novo Passag");
+						//debug(L"Novo Passag");
 						listPass[pos].passag = passagAux;
 						listPass[pos].passag.indicePipe = indice;
 						listPass[pos].isFree = FALSE;
 					}
 					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
-					listaPass(listPass);
 					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
@@ -401,16 +397,19 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						if (passagAux.sair == 3) {
 							listPass[pos].isFree = TRUE;
 							listPass[pos].passag.sair = 0;
+							_tprintf(L"Vai ser desconnectado o pipe: [%d]\n", indice);
 							FlushFileBuffers(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst);
 							DisconnectAndReconnect(infoPassagPipes, listPass[pos].passag.indicePipe);
 						}
 					}
 				}
 				break;
+
 			default:
 				_tprintf(L"Invalid pipe state.\n");
 				return 0;
 			}
+
 			LeaveCriticalSection(&infoControl->criticalSectionControl);
 		}
 	}

@@ -36,17 +36,19 @@ void imprimeListaPassag(const listaPassag* lista) {
 }
 
 BOOL isNovoPassag(passageiro passag, listaPassag* listPassag) {
-	for (int i = 0; i < MAX_PASSAG; ++i)
-		if (passag.idPassag == listPassag[i].passag.idPassag)
+	for (int i = 0; i < MAX_PASSAG; ++i) {Sleep(99);
+		if (passag.idPassag == listPassag[i].passag.idPassag) {
 			return FALSE;
+		}
+	}
 	return TRUE;
 }
 
 int getPrimeiraPosVaziaPassag(listaPassag* listPassag) {
 	for (int i = 0; i < MAX_PASSAG; ++i) {
-		if (listPassag[i].isFree)
+		if (listPassag[i].isFree){
 			return i;
-		_tprintf("Valor do bool: %d\n", listPassag[i].isFree);
+		}
 	}
 	return -1;
 }
@@ -75,14 +77,17 @@ int verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAer
 }
 
 TCHAR* listaPass(const listaPassag* lista) {
-	TCHAR lstAux[500] = _TEXT(" ");
-	TCHAR lstPas[7000] = _TEXT(" ");
-	for (int i = 0; i < MAX_PASSAG - 1; ++i) {
+	TCHAR lstAux[500] = _TEXT("");
+	TCHAR lstPas[7000] = _TEXT("");
+	for (int i = 0; i < MAX_PASSAG; ++i) {
 		if (!lista[i].isFree) {
-			_stprintf_s(lstAux, 7000, L"ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n",
+			_stprintf_s(lstAux, 500, L"ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n",
 				lista[i].passag.idPassag, lista[i].passag.nomePassag, lista[i].passag.aeroOrigem, lista[i].passag.aeroDestino);
 			_tcscat_s(lstPas, 7000, lstAux);
 		}
+	}
+	if (lstPas[0] == 0) {
+		_tcscpy_s(lstPas, 100, L"Não existem Passageiros ainda!");
 	}
 	return lstPas;
 }

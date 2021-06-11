@@ -81,11 +81,11 @@ aeroporto* inicializaListaAeroportos(int tamLista) {
 
 TCHAR* listaAero(const aeroporto* lista, const int tamLista) {
 	TCHAR lstAux[500] = _TEXT(" ");
-	TCHAR lstAero[500] = _TEXT(" ");
+	TCHAR lstAero[7000] = _TEXT(" ");
 	for (int i = 0; i < tamLista - 1; ++i) {
 		_stprintf_s(lstAux, 500, L"Aeroporto: %s Localização x: %d y: %d\n",
 			lista[i].nome,lista[i].localizacao.posX,lista[i].localizacao.posY);
-		_tcscat_s(lstAero, 100, lstAux);
+		_tcscat_s(lstAero, 7000, lstAux);
 	}
 	return lstAero;
 }
