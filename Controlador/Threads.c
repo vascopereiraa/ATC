@@ -221,7 +221,6 @@ void WINAPI threadTimer(LPVOID lpParam) {
 //	return lstAero;
 //}
 
-
 DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
 	InfoPassagPipes* infoPassagPipes = infoControl->infoPassagPipes;
@@ -298,8 +297,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					_tprintf(L"Error %d. [CONNECTING_STATE]\n", GetLastError());
 					return 0;
 				}
-				else 
-					_tprintf(L"Vai ser inserido um novo passageiro. Indice do pipe: [%d]\n\n",indice);
+
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 				break;
 				// Pending read operation 
@@ -327,9 +325,8 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 			break;
 		case READING_STATE:
-			_tprintf(L"\nVai ser lida informação do pipe: [%d] ", indice);
+			displayInfoPassag(passagAux);
 			fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-
 			if (fSuccess && totalBytes != 0)
 			{
 				infoPassagPipes->hPipes[indice].fPendingIO = FALSE;
@@ -358,6 +355,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			DWORD dwErr = GetLastError();
 			if (!fSuccess && (dwErr == ERROR_IO_PENDING))
 			{
+				_tprintf(L"Pipe [%d] ainda está a aguardar a inserção da totalidade dos dados.", indice);
 				infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
 				continue;
 			}
