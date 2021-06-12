@@ -85,7 +85,6 @@ int _tmain(int argc, LPTSTR argv[]) {
             return -1;
         }
     }
-
     // Escrita no pipe para informar controlador sobre a sua existência com envio da sua estrutura
     if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");

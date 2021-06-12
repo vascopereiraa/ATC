@@ -284,7 +284,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 		indice = iResult - WAIT_OBJECT_0;
 		// Reset
 		//ResetEvent(infoPassagPipes->hEvents[indice]);
-		_tprintf(L"indice: %d\n", indice);
 		if (indice < 0 || indice >(MAX_PASSAG - 1))
 		{
 			_tprintf(L"Index fora do range! \n");
@@ -299,6 +298,9 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 				{
 					_tprintf(L"Error %d. [CONNECTING_STATE]\n", GetLastError());
 					return 0;
+				}
+				else {
+					_tprintf(L"Vai ser inserido um novo passageiro. Indice do pipe: [%d]\n\n",indice);
 				}
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 				break;
@@ -332,10 +334,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			if (fSuccess && totalBytes != 0)
 			{
 				infoPassagPipes->hPipes[indice].fPendingIO = FALSE;
-
-				// Caso seja a 1º conexão, nome ainda não está preenchido
-				/*if (passagAux.nomePassag[0] == '\0')
-					break;*/
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
 					pos = getPrimeiraPosVaziaPassag(listPass);
@@ -350,7 +348,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
 						listPass[pos].isFree = TRUE;
-						passagAux.sair = 0;
 						WriteFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
 					}
 				}
@@ -366,11 +363,10 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 				continue;
 			}
 			else {
+				_tprintf(L"\n\nEntrei aqui :(\n\n");
 				DisconnectAndReconnect(infoPassagPipes, indice, passagAux);
 			}
-
 			break;
-
 		default:
 			_tprintf(L"Invalid pipe state.\n");
 			return 0;
