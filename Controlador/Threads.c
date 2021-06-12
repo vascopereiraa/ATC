@@ -465,4 +465,4 @@ void menu(infoControlador * infoControl) {
 		}
 	}
 
-	}
+}

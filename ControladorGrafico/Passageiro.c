@@ -24,7 +24,7 @@ InfoPassagPipes* inicializaListaPassagPipes() {
 
 
 void displayInfoPassag(passageiro passagAux) {
-	_tprintf(L"\nInformação de passageiro-> IDPassag: %d Nome: %s Destino: %s Origem: %s \n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroDestino, passagAux.aeroOrigem); Sleep(350);
+	_tprintf(L"\nInformação de passageiro-> IDPassag: %d Nome: %s Destino: %s Origem: %s \n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroDestino, passagAux.aeroOrigem); Sleep(1000);
 }
 
 void imprimeListaPassag(const listaPassag* lista) {
@@ -69,15 +69,18 @@ int getPosPassag(passageiro aux, listaPassag* listaPassag) {
 // Retorna 1 quando não existe aeroOrigem
 // Retorna 2 quando não existe aeroDestino
 // Retorna 0 quando existem ambos.
-int verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAeroportos) {
+int verificaAeroExiste(passageiro* passag, aeroporto* listaAeroportos, int tamAeroportos) {
 	BOOL flag = 0;
 	for (int i = 0; i < tamAeroportos; i++) 
-		if (!_tcscmp(passag.aeroOrigem, listaAeroportos[i].nome)) 
+		if (!_tcscmp(passag->aeroOrigem, listaAeroportos[i].nome)) {
+			passag->coordAtuais.posX = listaAeroportos[i].localizacao.posX;
+			passag->coordAtuais.posY = listaAeroportos[i].localizacao.posY;
 			flag = 1;
+		}
 	if (!flag)
 		return 1;
 	for (int i = 0; i < tamAeroportos; i++) 
-		if (!_tcscmp(passag.aeroDestino, listaAeroportos[i].nome)) 
+		if (!_tcscmp(passag->aeroDestino, listaAeroportos[i].nome))
 			return 0;
 	return 2;
 }

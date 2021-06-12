@@ -6,31 +6,28 @@
 #include "../Passageiro/Passageiro.h"
 
 typedef struct {
-	passageiro passag;
-	BOOL isFree;
+	passageiro passag; // Estrutura do passageiro
+	BOOL isFree;      // Flag a indicar se posição esta livre
 } listaPassag;
 
-// NAMED PIPES
 typedef struct {
-	OVERLAPPED oOverLap;
-	HANDLE hPipeInst;
-	BOOL fPendingIO;
-	DWORD dwState;
-} PIPESTRUCT, * LPPIPEINST;
+	OVERLAPPED oOverLap; // Estrutura overlapped
+	HANDLE hPipeInst;	 // Instancia do pipe atribuida
+	BOOL fPendingIO;     // Flag para indicação de leitura ou escrita pendente
+	DWORD dwState;	     // Estado do pipe
+} PIPESTRUCT;
 
 typedef struct {
-	HANDLE hEvents[MAX_PASSAG];
-	PIPESTRUCT hPipes[MAX_PASSAG];
-	listaPassag listPassag[MAX_PASSAG];
-	HANDLE hMutex;
-	int terminar;
+	HANDLE hEvents[MAX_PASSAG];		    // Array de Handles dos eventos associados a cada pipe
+	PIPESTRUCT hPipes[MAX_PASSAG];      // Array de instâncias de pipes criados
+	listaPassag listPassag[MAX_PASSAG];	// Array de Passageiros
 } InfoPassagPipes;
 
 void imprimeListaPassag(const listaPassag* lista);
 int getPrimeiraPosVaziaPassag(listaPassag* listPassag);
 BOOL isNovoPassag(passageiro passag, listaPassag* listPassag);
 int getPosPassag(passageiro aux, listaPassag* listaPassag);
-BOOL verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAeroportos);
+BOOL verificaAeroExiste(passageiro *passag, aeroporto* listaAeroportos, int tamAeroportos);
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
 InfoPassagPipes* inicializaListaPassagPipes();
 void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);

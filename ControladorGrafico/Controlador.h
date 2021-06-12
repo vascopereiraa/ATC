@@ -10,22 +10,18 @@
 #include "Passageiro.h"
 
 typedef struct {
-	HWND hWnd;
-	HDC memDC;
-	HBITMAP hBmp;
-	HDC hdc;
-	int xPos;
-	int yPos;
-	BOOL descAero;
-	BOOL descAviao;
-
+	HWND hWnd;      // Handle para a janela principal
+	HDC hdc;        // HDC principal para display da info
+	HDC memDC;      // HDC para double buffer,
+	HDC memDCBack;  // HDC para as imagens do avião e aeroporto
+	int xPos;		// Armazenar coordenadas X do rato
+	int yPos;	    // Armazenar coordenadas Y do rato
+	BOOL descAero;  // Flag para WM_PAINT saber quando imprimir descrição Aero
+	BOOL descAviao; // Flag para WM_PAINT saber quando imprimir descrição Avião
 	// Pinturas
-	HBITMAP hBmpBG;
-	HBITMAP hBmpAviao;
-	HDC memDCBack;
-	BITMAP bmp;
-
-	HBITMAP hBmpAeroporto;
+	HBITMAP hBmp;		  // Bitmap compativel com o HDC
+	HBITMAP hBmpAviao;	  // BitMap para a imagem do Aviao
+	HBITMAP hBmpAeroporto;// BitMap para a imagem do Aeroporto
 
 } Pintor;
 
@@ -41,7 +37,7 @@ typedef struct {
 	controloBufferCirc* bufCirc;	// Estrutura de dados do buffer circular
 	listaAviao* listaAvioes;		// Array de avioes
 	aeroporto* listaAeroportos;		// Array de aeroportos
-	Pintor* pintor;
+	Pintor* pintor;					// Estrutura para a parte gráfica
 
 	int tamAvioes;					// Tamanho do array de avioes
 	int tamAeroporto;				// Tamanho do array de aeroportos
@@ -50,6 +46,10 @@ typedef struct {
 	int* terminaControlador;					// Flag para terminar o controlador
 	int* suspendeNovosAvioes;					// Flag para suspender/aceitar novos avioes
 	CRITICAL_SECTION criticalSectionControl;	// Garante sincronização entre threads
+	// Handle threads
+	HANDLE hThreadBuffer;
+	HANDLE hThreadTimer;
+	HANDLE hThreadNamedPipes;
 } infoControlador;
 
 // Funcoes de Controlo do Buffer Circular em SHMem

@@ -25,11 +25,42 @@ INT_PTR CALLBACK    CriarAeroporto(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ListarAeroportos(HWND, UINT, WPARAM, LPARAM);
 
 
-int displayInfo(HWND hWnd, infoControlador* dados);
 int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice);
 int infoAviao(infoControlador* dados);
 void verificaExistenciaAero(HWND hWnd, infoControlador* dados);
 void verificaExistenciaAviao(HWND hWnd, infoControlador* dados, const int* indice);
+
+void terminaProcessos(infoControlador* infoControl) {
+#ifdef TESTES
+    for (int i = 1; i < infoControl->tamAvioes; ++i) {
+#else
+    for (int i = 0; i < infoControl->tamAvioes; ++i) {
+#endif
+        if (!infoControl->listaAvioes[i].isFree) {
+            HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
+            if (hProcess != NULL) {
+                encerraMemoriaPartilhada(&infoControl->listaAvioes[i].memAviao);
+                TerminateProcess(hProcess, 1);
+            }
+        }
+    }
+    for (int i = 0; i < MAX_PASSAG; ++i) {
+        if (!infoControl->infoPassagPipes->listPassag[i].isFree) {
+            HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->infoPassagPipes->listPassag[i].passag.idPassag);
+            if (hProcess != NULL) {
+                TerminateProcess(hProcess, 1);
+            }
+        }
+    }
+}
+
+void terminaControl(infoControlador* infoControl) {
+    WaitForSingleObject(infoControl->hThreadBuffer, INFINITE);
+    WaitForSingleObject(infoControl->hThreadTimer, INFINITE);
+    WaitForSingleObject(infoControl->hThreadNamedPipes, INFINITE);
+    terminaProcessos(infoControl);
+    encerraControlador(infoControl);
+}
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -55,10 +86,16 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         fatal(L"Ocorreu um erro ao criar a lista de avioes");
         return NULL;
     }
-    infoControl.pintor->hBmp = NULL;
+    infoControl.hThreadBuffer = NULL;
+    infoControl.hThreadNamedPipes = NULL;
+    infoControl.hThreadTimer = NULL;
+    infoControl.pintor->hWnd = NULL;
     infoControl.pintor->hdc = NULL;
     infoControl.pintor->memDC = NULL;
-    infoControl.pintor->hWnd = NULL;
+    infoControl.pintor->memDCBack = NULL;
+    infoControl.pintor->hBmp = NULL;
+    infoControl.pintor->descAero = FALSE;
+    infoControl.pintor->descAviao = FALSE;
     infoControl.pintor->hBmpAeroporto = (HBITMAP)LoadImage(NULL, _TEXT("control.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     infoControl.pintor->hBmpAviao = (HBITMAP)LoadImage(NULL, _TEXT("airplane.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
@@ -142,30 +179,30 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
     criaCriticalSectionControl(&infoControl.criticalSectionControl);
 
     // Criar a Thread para gerenciar o buffer circular
-    HANDLE hThreadBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadControloBuffer, (LPVOID)&infoControl, 0, NULL);
-    if (hThreadBuffer == NULL) {
+    infoControl.hThreadBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadControloBuffer, (LPVOID)&infoControl, 0, NULL);
+    if (infoControl.hThreadBuffer == NULL) {
         encerraControlador(&infoControl);
         return 1;
     }
 
     // Cria a Thread de Timer para a reação às respostas dos avioes
-    HANDLE hThreadTimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadTimer, (LPVOID)&infoControl, 0, NULL);
-    if (hThreadTimer == NULL) {
+    infoControl.hThreadTimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadTimer, (LPVOID)&infoControl, 0, NULL);
+    if (infoControl.hThreadTimer == NULL) {
         *infoControl.terminaControlador = 1;
-        WaitForSingleObject(hThreadBuffer, INFINITE);
-        CloseHandle(hThreadBuffer);
+        WaitForSingleObject(infoControl.hThreadBuffer, INFINITE);
+        CloseHandle(infoControl.hThreadBuffer);
         encerraControlador(&infoControl);
         return 1;
     }
 
     // Pipes
-    HANDLE hThreadNamedPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadNamedPipes, (LPVOID)&infoControl, 0, NULL);
-    if (hThreadTimer == NULL) {
+    infoControl.hThreadNamedPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadNamedPipes, (LPVOID)&infoControl, 0, NULL);
+    if (infoControl.hThreadNamedPipes == NULL) {
         *infoControl.terminaControlador = 1;
-        WaitForSingleObject(hThreadBuffer, INFINITE);
-        WaitForSingleObject(hThreadTimer, INFINITE);
-        CloseHandle(hThreadTimer);
-        CloseHandle(hThreadBuffer);
+        WaitForSingleObject(infoControl.hThreadBuffer, INFINITE);
+        WaitForSingleObject(infoControl.hThreadTimer, INFINITE);
+        CloseHandle(infoControl.hThreadTimer);
+        CloseHandle(infoControl.hThreadBuffer);
         encerraControlador(&infoControl);
         return 1;
     }
@@ -195,14 +232,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    WaitForSingleObject(hThreadBuffer, INFINITE);
-    WaitForSingleObject(hThreadTimer, INFINITE);
-    WaitForSingleObject(hThreadNamedPipes, INFINITE);
-    CloseHandle(hThreadBuffer);
-    CloseHandle(hThreadTimer);
-    CloseHandle(hThreadNamedPipes);
-    encerraControlador(&infoControl);
-
+    terminaControl(&infoControl);
     return (int) msg.wParam;
 }
 
@@ -354,9 +384,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_CLOSE:
         *(dados->terminaControlador) = 1;
+        terminaControl(dados);
         DestroyWindow(hWnd);
         break;
     case WM_DESTROY:
+        *(dados->terminaControlador) = 1;
         PostQuitMessage(0);
         break;
     case WM_SIZE:
@@ -531,57 +563,6 @@ void verificaExistenciaAviao(HWND hWnd, infoControlador* dados, const int* indic
     }
 }
 
-int displayInfo(HWND hWnd, infoControlador* dados) {
-    RECT rectClientWindow = { 0, 0, 0, 0 };
-    SIZE sizeTextLogicalSize = { 0, 0 };
-    int tamstrchars = 0;
-    // Paint brush
-    PAINTSTRUCT ps;
-    TCHAR mystring[200] = _TEXT("");
-
-    HDC hDC = BeginPaint(hWnd, &ps);
-    SetBkMode(hDC, TRANSPARENT);
-    // Colocar cor do texto a azul
-    SetTextColor(hDC, RGB(0, 0, 255));
-
-    GetClientRect(hWnd, &rectClientWindow);
-    
-    TCHAR t[5] = _TEXT("");
-    for (int i = 0; i < dados->tamAvioes; ++i) {
-        if (dados->listaAvioes[i].isFree == FALSE) {
-            if (dados->listaAvioes[i].av.emViagem == TRUE)
-                _tcscpy_s(t, 5, L"1");
-            else
-                _tcscpy_s(t, 5, L" ");
-
-            // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
-            GetTextExtentPoint32(hDC, t, _tcslen(t), &sizeTextLogicalSize);
-
-            TextOut(hDC,
-                dados->listaAvioes[i].av.atuais.posX,
-                dados->listaAvioes[i].av.atuais.posY,
-                t,
-                _tcslen(t));
-        }
-    }
-
-    for (int i = 0; i < dados->tamAeroporto; ++i) {
-        // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
-        GetTextExtentPoint32(hDC, L"0", _tcslen(L"0"), &sizeTextLogicalSize);
-
-        TextOut(hDC,
-            //(rectClientWindow.right - sizeTextLogicalSize.cx) / 2,
-            //rectClientWindow.bottom / 2,
-            dados->listaAeroportos[i].localizacao.posX,
-            dados->listaAeroportos[i].localizacao.posY,
-            L"0",
-            _tcslen(L"0"));
-    }
-
-    SetBkMode(hDC, OPAQUE);
-    EndPaint(hWnd, &ps);
-}
-    
 int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 	RECT rectClientWindow = { 0, 0, 0, 0 };
 	PAINTSTRUCT ps;
@@ -589,31 +570,35 @@ int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 	dados->pintor->hdc = BeginPaint(hWnd, &ps);
 
 	GetClientRect(hWnd, &rectClientWindow);
+    // Criar bitmap compativel com o HDC
     if (dados->pintor->hBmp == NULL)
 		dados->pintor->hBmp = CreateCompatibleBitmap(dados->pintor->hdc, rectClientWindow.right, rectClientWindow.bottom);
+    // memDC vai ser compativel com o HDC, sendo ele pintado em vez do HDC, para no fim fazer copiar o memDC para o HDC (doublebuffer)
     dados->pintor->memDC = CreateCompatibleDC(dados->pintor->hdc);
+    // memDCBack vai ser compativel com o memDC, vai servir associar as respetivas imagens
     dados->pintor->memDCBack = CreateCompatibleDC(dados->pintor->memDC);
 
+    // Seleção do objeto a ser associado ao HDC
     SelectObject(dados->pintor->memDC, dados->pintor->hBmp);
-    // Associar ao buffer para pintar o hBmp do avião
+    // Associar ao memDCBack para pintura, o bitmap que contem a foto do aviao
     SelectObject(dados->pintor->memDCBack, dados->pintor->hBmpAviao);
-
+    // Pintar o fundo do HDC auxiliar de branco, para atualizar a vista
     BitBlt(dados->pintor->memDC, 0, 0, rectClientWindow.right, rectClientWindow.bottom, NULL, 0, 0, WHITENESS);
-
+    // Se a dados->pintor->descAero == true, user clicou no aero e vai ser mostrada a sua descrição
 	if (dados->pintor->descAero) {
 		verificaExistenciaAero(dados->pintor->memDC, dados);
 		EnterCriticalSection(&dados->criticalSectionControl);
 		dados->pintor->descAero = FALSE;
 		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
-
+    // Se a dados->pintor->descAviao == true, user passou o rato por cima do aviao e vai ser mostrada a sua descrição
 	if (dados->pintor->descAviao) {
 		verificaExistenciaAviao(dados->pintor->memDC, dados, indice);
 		EnterCriticalSection(&dados->criticalSectionControl);
 		dados->pintor->descAviao = FALSE;
 		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
-
+    // Pintar a respetiva imagem (memDCBack), para a respetiva coordenada da sua localização no memDC auxiliar (DB)
 	for (int i = 0; i < dados->tamAvioes; ++i) {
 		if (dados->listaAvioes[i].isFree == FALSE) {
 			if (dados->listaAvioes[i].av.emViagem == TRUE)
@@ -623,20 +608,82 @@ int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
                     10,10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 		}
 	}
-    // Associar ao buffer para pintar o hBmp do aero
+    // Associar ao memDCBack para pintura, o bitmap que contem a foto do aeroporto
     SelectObject(dados->pintor->memDCBack, dados->pintor->hBmpAeroporto);
 
 	for (int i = 0; i < dados->tamAeroporto; ++i) {
-		// Coloca nas coordenadas do respetivo aewroporto, a imagem existente no memDCBack, com 10x10px
+		// Coloca nas coordenadas do respetivo aeroporto, a imagem existente no memDCBack, com 10x10px
         BitBlt(dados->pintor->memDC, 
             dados->listaAeroportos[i].localizacao.posX,
             dados->listaAeroportos[i].localizacao.posX,
             10,10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 	}
-    // Double buffer, switcharo
+    // Double buffer, trocar o ecrã visivel ao utilizador (hdc) pelo que tem a pintura atualizada memDC.
     BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->memDC, 0, 0, SRCCOPY);
 
     DeleteDC(dados->pintor->memDC);
     DeleteDC(dados->pintor->memDCBack);
     EndPaint(hWnd, &ps);
 }
+
+
+// Double buffer original, implementado em formato de texto.
+/*
+int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
+    RECT rectClientWindow = { 0, 0, 0, 0 };
+    SIZE sizeTextLogicalSize = { 0, 0 };
+    int tamstrchars = 0;
+    // Paint brush
+    PAINTSTRUCT ps;
+    TCHAR mystring[200] = _TEXT("");
+
+    dados->pintor->hdc = BeginPaint(hWnd, &ps);
+    // Colocar cor do texto a azul
+    SetTextColor(dados->pintor->hdc, RGB(0, 0, 255));
+    GetClientRect(hWnd, &rectClientWindow);
+
+    if (dados->pintor->hdcDB == NULL) {
+        dados->pintor->hdcDB = CreateCompatibleDC(dados->pintor->hdc);
+        dados->pintor->hbDB = CreateCompatibleBitmap(dados->pintor->hdc, rectClientWindow.right, rectClientWindow.bottom);
+        SelectObject(dados->pintor->hdcDB, dados->pintor->hbDB);
+    }
+    FillRect(dados->pintor->hdcDB, &rectClientWindow, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
+
+    if (dados->pintor->descAero) {
+        verificaExistenciaAero(dados->pintor->hdcDB, dados);
+        EnterCriticalSection(&dados->criticalSectionControl);
+        dados->pintor->descAero = FALSE;
+        LeaveCriticalSection(&dados->criticalSectionControl);
+    }
+
+    if (dados->pintor->descAviao) {
+        verificaExistenciaAviao(dados->pintor->hdcDB, dados, indice);
+        EnterCriticalSection(&dados->criticalSectionControl);
+        dados->pintor->descAviao = FALSE;
+        LeaveCriticalSection(&dados->criticalSectionControl);
+    }
+
+    TCHAR t[5] = _TEXT("");
+    for (int i = 0; i < dados->tamAvioes; ++i) {
+        if (dados->listaAvioes[i].isFree == FALSE) {
+            if (dados->listaAvioes[i].av.emViagem == TRUE)
+                _tcscpy_s(t, 5, L"1");
+            else
+                _tcscpy_s(t, 5, L" ");
+            // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+            GetTextExtentPoint32(dados->pintor->hdcDB, t, _tcslen(t), &sizeTextLogicalSize);
+            TextOut(dados->pintor->hdcDB, dados->listaAvioes[i].av.atuais.posX, dados->listaAvioes[i].av.atuais.posY, t, _tcslen(t));
+        }
+    }
+    for (int i = 0; i < dados->tamAeroporto; ++i) {
+        // Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
+        GetTextExtentPoint32(dados->pintor->hdcDB, L"0", _tcslen(L"0"), &sizeTextLogicalSize);
+        TextOut(dados->pintor->hdcDB, dados->listaAeroportos[i].localizacao.posX, dados->listaAeroportos[i].localizacao.posY, L"0", _tcslen(L"0"));
+    }
+
+    BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->hdcDB, 0, 0, SRCCOPY);
+    BitBlt(dados->pintor->hdcDB, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->hdcDB, 0, 0, SRCCOPY);
+    EndPaint(hWnd, &ps);
+}
+*/

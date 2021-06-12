@@ -90,11 +90,10 @@ int _tmain(int argc, LPTSTR argv[]) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
     }
-
    // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
      //   passag.fraseInfo, passag.indicePipe);
-
-    // Criar thread para escrever no pipe para terminar
+    
+     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
     while (passag.sair != 3 && *(passag.sairPassag) != 1) {
         fSuccess = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
@@ -134,6 +133,9 @@ int _tmain(int argc, LPTSTR argv[]) {
                     TerminateThread(hThread, NULL);
                     break;
                 }
+            }
+            else {
+                break;
             }
             if (passag.sair == 3 || passag.sairPassag == 1) {
                 break;

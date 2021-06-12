@@ -17,3 +17,4 @@ IDM_COMUNICACAO
 	IDC_INFO_AEROPORTO
 	IDC_LAERO_SAIR
 
+terminar todos os processos ao fechar o controlador

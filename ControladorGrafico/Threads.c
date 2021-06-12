@@ -249,7 +249,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	while (!*(infoControl->terminaControlador)) {
 		debug(L"[CONTROL] Esperando ligação de um Passageiro.");
 		// Está a espera que seja aberto nova instancia de pipe
-		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, INFINITE);
+		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
 		indice = iResult - WAIT_OBJECT_0;
 		// Reset
 		//ResetEvent(infoPassagPipes->hEvents[indice]);
@@ -310,7 +310,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 						listPass[pos].passag.indicePipe = indice;
 						listPass[pos].isFree = FALSE;
 					}
-					int existeAero = verificaAeroExiste(passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
+					int existeAero = verificaAeroExiste(&passagAux, infoControl->listaAeroportos, infoControl->tamAeroporto);
 					// Se não existir aero de origem ou destino, avisa passageiro para ir embora
 					if (existeAero != 0) {
 						passagAux.sair = existeAero;
