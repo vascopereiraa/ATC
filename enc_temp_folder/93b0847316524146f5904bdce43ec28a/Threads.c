@@ -10,10 +10,46 @@
 #include "Utils.h"
 #include "Passageiro.h"
 
-RECT* calculaRect(coordenadas coord) {
-	RECT rect = { coord.posX - 30, coord.posY + 30, coord.posX + 30, coord.posY - 30 };
-	return &rect;
+
+BOOL ConnectToNewClient(HANDLE hPipe, LPOVERLAPPED lpo)
+{
+	BOOL fConnected, fPendingIO = FALSE;
+
+	// Start an overlapped connection for this pipe instance. 
+	fConnected = ConnectNamedPipe(hPipe, lpo);
+
+	// Overlapped ConnectNamedPipe should return zero. 
+	if (fConnected)
+	{
+		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
+		return 0;
+	}
+
+	switch (GetLastError())
+	{
+		// The overlapped connection in progress. 
+	case ERROR_IO_PENDING:
+		fPendingIO = TRUE;
+		break;
+
+		// Client is already connected, so signal an event. 
+
+	case ERROR_PIPE_CONNECTED:
+		if (SetEvent(lpo->hEvent))
+			break;
+
+		// If an error occurs during the connect operation... 
+	default:
+	{
+		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
+		return 0;
+	}
+	}
+
+	return fPendingIO;
 }
+
+//void WINAPI threadLeitorNamedPipes(LPVOID);
 
 void WINAPI threadControloBuffer(LPVOID lpParam) {
 
@@ -24,7 +60,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	aeroporto* listaAeroportos = dados->listaAeroportos;
 	int tamAvioes = dados->tamAvioes;
 	int tamAeroportos = dados->tamAeroporto;
-	
+
 	int pos = 0;
 	aviao aux;
 	while (!*(dados->terminaControlador)) {
@@ -42,15 +78,21 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 					listaAvioes[pos].av = aux;
 					listaAvioes[pos].isAlive = TRUE;
 					listaAvioes[pos].isFree = FALSE;
-					if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
-						debug(L"Nao foi possivel abrir a mem do av");
+					if (*dados->suspendeNovosAvioes) {
+						debug(L"Comunicação suspensa!");
 						listaAvioes[pos].isFree = TRUE;
+						listaAvioes[pos].av.terminaExecucao = 1;
 					}
 					else {
-						if (*dados->suspendeNovosAvioes) {
-							debug(L"Comunicação suspensa!");
+						if (!abreMemoriaPartilhada(&listaAvioes[pos])) {
+							debug(L"Nao foi possivel abrir a mem do av");
 							listaAvioes[pos].isFree = TRUE;
-							listaAvioes[pos].av.terminaExecucao = 1;
+						}
+						for (int i = 0; i < dados->tamAvioes - 1; ++i) {
+							if (!listaAvioes[i].isFree) {
+								_tprintf(L"ID: %d Aero Origem: %s Aero Destino: %s Velocidade %i\n",
+									listaAvioes[i].av.procID, listaAvioes[i].av.aeroOrigem, listaAvioes[i].av.aeroDestino, listaAvioes[i].av.velocidade);
+							}
 						}
 					}
 				}
@@ -100,7 +142,8 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
 							listaAvioes[pos].av.atuais.posY = listaAvioes[pos].av.proxCoord.posY;
 							atualizaCoordPassageiros(dados->infoPassagPipes, &listaAvioes[pos].av);
-							InvalidateRect(dados->pintor->hWnd, calculaRect(listaAvioes[pos].av.atuais), TRUE);
+							//InvalidateRect(dados->pintor->hWnd, &rect, TRUE);
+							//UpdateWindow(dados->pintor->hWnd);
 							break;
 						case 1:		// Esta no aeroporto destino
 							listaAvioes[pos].av.atuais.posX = listaAvioes[pos].av.proxCoord.posX;
@@ -109,7 +152,7 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 							_tcscpy_s(listaAvioes[pos].av.aeroDestino, STR_TAM, L"vazio");
 							listaAvioes[pos].av.emViagem = FALSE;
 							informaPassagDestino(dados->infoPassagPipes, &listaAvioes[pos].av);
-							InvalidateRect(dados->pintor->hWnd, calculaRect(listaAvioes[pos].av.atuais), TRUE);
+							//InvalidateRect(dados->pintor->hWnd, &rect, TRUE);
 							break;
 						case 2:		// Posicao esta ocupada
 							listaAvioes[pos].av.isSobreposto = TRUE;
@@ -129,27 +172,14 @@ void WINAPI threadControloBuffer(LPVOID lpParam) {
 	debug(L"Terminei - ThreadControlador");
 }
 
-void DestroyPassageiros(InfoPassagPipes* infoPassagPipe) {
-	DWORD totalBytes;
-	for (int i = 0; i < MAX_PASSAG; i++) {
-		if (!infoPassagPipe->listPassag[i].isFree) {
-			infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].dwState = WRITING_STATE;
-			infoPassagPipe->listPassag[i].passag.sair = 3;
-			// Envia mensagem para o pipe do passageiro, para ser informado que embarcou!
-			WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
-				&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
-				&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap);
-		}
-	}
-	
-}
-
 void WINAPI threadTimer(LPVOID lpParam) {
 	infoControlador* dados = (infoControlador*)lpParam;
 	listaAviao* listaAvioes = dados->listaAvioes;
 	int tamAvioes = dados->tamAvioes;
+	BOOL alteraDisplay = FALSE;
 
 	while (!*(dados->terminaControlador)) {
+		alteraDisplay = FALSE;
 		Sleep(3000);
 		EnterCriticalSection(&dados->criticalSectionControl);
 #ifdef TESTES
@@ -163,48 +193,33 @@ void WINAPI threadTimer(LPVOID lpParam) {
 			}
 			else {
 				if (!listaAvioes[i].isFree) {
-					DestroyPassageiros(dados->infoPassagPipes);
-					InvalidateRect(dados->pintor->hWnd, calculaRect(listaAvioes[i].av.atuais), TRUE);
+					alteraDisplay = TRUE;
 					listaAvioes[i].isFree = TRUE;
 					encerraMemoriaPartilhada(&listaAvioes[i].memAviao);
 				}
 			}
 		}
+		/*if (alteraDisplay)
+			InvalidateRect(dados->pintor->hWnd, &rect, TRUE);*/
+
 		LeaveCriticalSection(&dados->criticalSectionControl);
 	}
+
 	debug(L"Terminei - ThreadTimer");
 }
 
-BOOL ConnectToNewClient(HANDLE hPipe, LPOVERLAPPED lpo)
-{
-	BOOL fConnected, fPendingIO = FALSE;
-	// Start an overlapped connection for this pipe instance. 
-	fConnected = ConnectNamedPipe(hPipe, lpo);
-	// Overlapped ConnectNamedPipe should return zero. 
-	if (fConnected)
-	{
-		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
-		return 0;
-	}
-	switch (GetLastError())
-	{
-		// The overlapped connection in progress. 
-	case ERROR_IO_PENDING:
-		fPendingIO = TRUE;
-		break;
-		// Client is already connected, so signal an event. 
-	case ERROR_PIPE_CONNECTED:
-		if (SetEvent(lpo->hEvent))
-			break;
-		// If an error occurs during the connect operation... 
-	default:
-	{
-		_tprintf(L"ConnectNamedPipe failed with %d.\n", GetLastError());
-		return 0;
-	}
-	}
-	return fPendingIO;
-}
+
+//TCHAR* listaAero(const aeroporto* lista, const int tamLista) {
+//	TCHAR lstAux[500] = _TEXT(" ");
+//	TCHAR lstAero[500] = _TEXT(" ");
+//	for (int i = 0; i < tamLista - 1; ++i) {
+//		_stprintf_s(lstAux, 500, L"Aeroporto: %s Localização x: %d y: %d\n",
+//			lista[i].nome, lista[i].localizacao.posX, lista[i].localizacao.posY);
+//		_tcscat_s(lstAero, 100, lstAux);
+//	}
+//	return lstAero;
+//}
+
 
 DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	infoControlador* infoControl = (infoControlador*)lpParam;
@@ -265,57 +280,67 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 		debug(L"[CONTROL] Esperando ligação de um Passageiro.");
 		// Está a espera que seja aberto nova instancia de pipe
 		iResult = WaitForMultipleObjects(MAX_PASSAG, infoPassagPipes->hEvents, FALSE, 5000);
-		if (iResult != WAIT_TIMEOUT) {
-			indice = iResult - WAIT_OBJECT_0;
-			// Reset
-			//ResetEvent(infoPassagPipes->hEvents[indice]);
-			if (indice < 0 || indice >(MAX_PASSAG - 1))
-			{
-				_tprintf(L"Index fora do range! \n");
-				return 0;
-			}
-			if (infoPassagPipes->hPipes[indice].fPendingIO) {
-				fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
-				switch (infoPassagPipes->hPipes[indice].dwState) {
-					// Aguardar conexão ainda
-				case CONNECTING_STATE:
-					if (!fSuccess || totalBytes == 0)
-					{
-						_tprintf(L"Error %d.\n", GetLastError());
-						return 0;
-					}
-					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
-					break;
-					// Pending read operation 
-				case READING_STATE:
-					if (!fSuccess || totalBytes == 0)
-					{
-						DisconnectAndReconnect(infoPassagPipes, listPass[indice].passag.indicePipe);
-						_tprintf(L"[ERROR] Reading\n");
-						continue;
-					}
-					infoPassagPipes->hPipes[indice].dwState = READING_STATE;
-					break;
-				case WRITING_STATE:
-					infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
-					break;
-				default:
-					_tprintf(L"Invalid pipe state.\n");
+		indice = iResult - WAIT_OBJECT_0;
+		// Reset
+		//ResetEvent(infoPassagPipes->hEvents[indice]);
+		_tprintf(L"indice: %d", indice);
+		if (indice < 0 || indice >(MAX_PASSAG - 1))
+		{
+			_tprintf(L"Index fora do range! \n");
+			return 0;
+		}
+		if (infoPassagPipes->hPipes[indice].fPendingIO) {
+			fSuccess = GetOverlappedResult(infoPassagPipes->hPipes[indice].hPipeInst, &infoPassagPipes->hPipes[indice].oOverLap, &totalBytes, FALSE);
+			switch (infoPassagPipes->hPipes[indice].dwState) {
+				// Aguardar conexão ainda
+			case CONNECTING_STATE:
+				if (!fSuccess)
+				{
+					_tprintf(L"Error %d. [CONNECTING_STATE]\n", GetLastError());
 					return 0;
 				}
-			}
-			// The pipe state determines which operation to do next. 
-			switch (infoPassagPipes->hPipes[indice].dwState)
-			{
-			case WRITING_STATE:
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 				break;
+				// Pending read operation 
 			case READING_STATE:
-				ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
-				// Caso seja a 1º conexão, nome ainda não está preenchido
-				if (passagAux.nomePassag[0] == '\0')
-					break;
+				if (!fSuccess || totalBytes == 0)
+				{
+					DisconnectAndReconnect(infoPassagPipes, listPass[indice].passag.indicePipe,passagAux);
+					_tprintf(L"[ERROR] Reading\n");
+					continue;
+				}
+				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+				break;
+			case WRITING_STATE:
+				infoPassagPipes->hPipes[indice].dwState = WRITING_STATE;
+				break;
+			default:
+				_tprintf(L"Invalid pipe state.\n");
+				return 0;
+			}
+		}
+		// The pipe state determines which operation to do next. 
+		switch (infoPassagPipes->hPipes[indice].dwState)
+		{
+		case WRITING_STATE:
+			infoPassagPipes->hPipes[indice].dwState = READING_STATE;
+			break;
+		case READING_STATE:
+			_tprintf(L"\n\nEntrei 1 :) %d\n\n", indice);
 
+			fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
+
+			_tprintf(L"\n\nEntrei 2 :) %d\n\n", indice);
+
+			if (fSuccess && totalBytes != 0)
+			{
+				_tprintf(L"\n\nEntrei 4 :) %d\n\n", indice);
+				infoPassagPipes->hPipes[indice].fPendingIO = FALSE;
+
+				// Caso seja a 1º conexão, nome ainda não está preenchido
+				/*if (passagAux.nomePassag[0] == '\0')
+					break;*/
+				_tprintf(L"\n\nEntrei 5 :) %d\n\n", indice);
 				int pos = -1;
 				if (isNovoPassag(passagAux, listPass)) {
 					pos = getPrimeiraPosVaziaPassag(listPass);
@@ -341,19 +366,29 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 							listPass[pos].isFree = TRUE;
 							listPass[pos].passag.sair = 0;
 							FlushFileBuffers(infoPassagPipes->hPipes[listPass[pos].passag.indicePipe].hPipeInst);
-							DisconnectAndReconnect(infoPassagPipes, listPass[pos].passag.indicePipe);
+							DisconnectAndReconnect(infoPassagPipes, listPass[pos].passag.indicePipe, passagAux);
 						}
 					}
 				}
-				break;
-
-			default:
-				_tprintf(L"Invalid pipe state.\n");
-				return 0;
+			}
+			DWORD dwErr = GetLastError();
+			if (!fSuccess && (dwErr == ERROR_IO_PENDING))
+			{
+				_tprintf(L"\n\nEntrei 3 :) %d ERROR: [%d]\n\n", indice,dwErr);
+			
+				infoPassagPipes->hPipes[indice].fPendingIO = TRUE;
+				continue;
 			}
 
-			LeaveCriticalSection(&infoControl->criticalSectionControl);
+
+			break;
+
+		default:
+			_tprintf(L"Invalid pipe state.\n");
+			return 0;
 		}
+
+		LeaveCriticalSection(&infoControl->criticalSectionControl);
 	}
 	// Disconecta de todos os pipes
 	for (int i = 0; i < MAX_PASSAG; i++) {
@@ -364,4 +399,90 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 		CloseHandle(infoPassagPipes->hPipes[i].hPipeInst);
 		CloseHandle(infoPassagPipes->hEvents[i]);
 	}
+}
+
+void menu(infoControlador * infoControl) {
+	TCHAR comando[STR_TAM], comandoAux[STR_TAM];
+	TCHAR* buffer = NULL;
+	TCHAR* token = NULL;
+
+	/*
+	* aero + nome + coordX + coordY
+	* laero = lista aeroportos
+	* lavioes = lista avioes
+	* lpass = lista passageiros
+	* susp = suspender comunicações
+	* ret = retomar comunicações
+	* end = terminar controlador
+	*/
+
+	while (!*(infoControl->terminaControlador)) {
+		_tprintf(L"\n\nInsira [cmd] para ver os comandos disponiveis\n");
+		_tprintf(L" > ");
+		_fgetts(comando, STR_TAM, stdin);
+		comando[_tcslen(comando) - 1] = '\0';
+
+		_tcscpy_s(&comandoAux, STR_TAM, comando);
+		token = _tcstok_s(comando, L" ", &buffer);
+		if (token != NULL) {
+			EnterCriticalSection(&infoControl->criticalSectionControl);
+			if (!_tcscmp(token, L"aero")) {
+				if (!adicionaAeroporto(infoControl->listaAeroportos, &infoControl->indiceAero, comandoAux))
+					_tprintf(L"\nNão foi possivel adicionar o aeroporto à lista\n\n");
+				else
+					_tprintf(L"\nAeroporto adicionado à lista de aeroportos\n\n");
+			}
+			if (!_tcscmp(token, L"laero")) {
+				_tprintf(L"Lista de aeroportos:\n");
+				imprimeListaAeroporto(infoControl->listaAeroportos, infoControl->indiceAero);
+				_tprintf(L"\n");
+			}
+			if (!_tcscmp(token, L"laviao")) {
+				_tprintf(L"Lista de avioes:\n");
+				imprimeListaAvioes(infoControl->listaAvioes, infoControl->tamAvioes);
+				_tprintf(L"\n");
+			}
+			if (!_tcscmp(token, L"lpass")) {
+				_tprintf(L"Lista de passageiros:\n");
+				imprimeListaPassag(infoControl->infoPassagPipes->listPassag);
+				_tprintf(L"\n");
+			}
+
+			if (!_tcscmp(token, L"susp")) {
+				if (*(infoControl->suspendeNovosAvioes) != 1) {
+					*(infoControl->suspendeNovosAvioes) = 1;
+					_tprintf(L"Aceitação de novos aviões suspendida!\n");
+				}
+				else
+					erro(L"A aceitação de novos aviões já se encontrava suspensa!");
+			}
+			if (!_tcscmp(token, L"ret")) {
+				*(infoControl->suspendeNovosAvioes) = 0;
+				_tprintf(L"Aceitação de novos aviões alterada!\n");
+			}
+			if (!_tcscmp(token, L"end")) {
+				*(infoControl->terminaControlador) = 1;
+			}
+			if (!_tcscmp(token, L"cmd")) {
+				_tprintf(L"aero + nome + coordX + coordY = criar aeroporto\nlaero = lista aeroportos\nlavioes = lista avioes\nsusp = suspender comunicações\n"
+					L"ret = retomar comunicações\nlpass = lista os passageiros conectados\nend = terminar controlador\ncmd = comandos disponiveis\n\n");
+			}
+			LeaveCriticalSection(&infoControl->criticalSectionControl);
+		}
+	}
+
+#ifdef TESTES
+	for (int i = 1; i < infoControl->tamAvioes; ++i) {
+#else
+	for (int i = 0; i < infoControl->tamAvioes; ++i) {
+#endif
+		if (!infoControl->listaAvioes[i].isFree) {
+			HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, infoControl->listaAvioes[i].av.procID);
+			if (hProcess != NULL) {
+				encerraMemoriaPartilhada(&infoControl->listaAvioes[i].memAviao);
+				TerminateProcess(hProcess, 1);
+			}
+		}
+	}
+
 }

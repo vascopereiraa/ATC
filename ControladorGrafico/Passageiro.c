@@ -92,6 +92,21 @@ TCHAR* listaPass(const listaPassag* lista) {
 	return lstPas;
 }
 
+void DisconnectAndReconnect(InfoPassagPipes* infoPassagPipes, int indice) {
+	if (!DisconnectNamedPipe(infoPassagPipes->hPipes[indice].hPipeInst)) {
+		_tprintf(TEXT("[ERRO] Desligar o pipe (DisconnectNamedPipe)\n"));
+		return;
+	}
+
+	infoPassagPipes->hPipes[indice].fPendingIO = ConnectToNewClient(
+		infoPassagPipes->hPipes[indice].hPipeInst,
+		&infoPassagPipes->hPipes[indice].oOverLap);
+
+	infoPassagPipes->hPipes[indice].dwState = infoPassagPipes->hPipes[indice].fPendingIO ?
+		CONNECTING_STATE : // still connecting 
+		READING_STATE;     // ready to read
+}
+
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 	DWORD totalBytes;
 	for (int i = 0; i < MAX_PASSAG; i++) {
@@ -110,7 +125,8 @@ BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 					if (!WriteFile(infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst,
 						&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
 						&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap))
-					{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele. 
+					{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele.
+						DisconnectAndReconnect(infoPassagPipe, infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst);
 						infoPassagPipe->listPassag[i].isFree = TRUE;
 					}
 				}
@@ -137,6 +153,7 @@ void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 					&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
 					&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap))
 				{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele. 
+					DisconnectAndReconnect(infoPassagPipe, infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst);
 					infoPassagPipe->listPassag[i].isFree = TRUE;
 				}
 			}
@@ -162,6 +179,7 @@ void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av) {
 					&infoPassagPipe->listPassag[i].passag, sizeof(passageiro), &totalBytes,
 					&infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].oOverLap)) 
 				{ // Caso ocorra um erro, passageiro saiu, vai passar a estar livre a posicao dele. 
+					DisconnectAndReconnect(infoPassagPipe, infoPassagPipe->hPipes[infoPassagPipe->listPassag[i].passag.indicePipe].hPipeInst);
 					infoPassagPipe->listPassag[i].isFree = TRUE;
 				}
 			}

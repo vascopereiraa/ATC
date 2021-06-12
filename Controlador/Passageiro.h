@@ -29,8 +29,12 @@ typedef struct {
 void imprimeListaPassag(const listaPassag* lista);
 int getPrimeiraPosVaziaPassag(listaPassag* listPassag);
 BOOL isNovoPassag(passageiro passag, listaPassag* listPassag);
+int getPosPassag(passageiro aux, listaPassag* listaPassag);
 BOOL verificaAeroExiste(passageiro passag, aeroporto* listaAeroportos, int tamAeroportos);
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
 InfoPassagPipes* inicializaListaPassagPipes();
 void atualizaCoordPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av);
 void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av);
+TCHAR* listaPass(const listaPassag* lista);
+void DisconnectAndReconnect(InfoPassagPipes* infoPassagPipes, int indice, const passageiro PassAux);
+void DestroyPassageiros(InfoPassagPipes* infoPassagPipe);

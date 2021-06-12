@@ -98,50 +98,52 @@ int _tmain(int argc, LPTSTR argv[]) {
     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
     while (passag.sair != 3 && *(passag.sairPassag) != 1) {
-        ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
-        if (WaitForSingleObject(hEvent, 6000) != WAIT_TIMEOUT) {
-            GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
-           // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
-             //   passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
+        fSuccess = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
 
-            if (passag.sair == 1) {
-                _tprintf(L"Não existe o aeroporto de Origem!\n");
-                TerminateThread(hThread, NULL);
-                break;
-            }
-            if (passag.sair == 2) {
-                _tprintf(L"Não existe o aeroporto de Destino!\n");
-                TerminateThread(hThread, NULL);
-                break;
+        if (WaitForSingleObject(hEvent, 6000) != WAIT_TIMEOUT) {
+            if (fSuccess && numBytesLidos != 0) {
+                GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
+                // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
+                  //   passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
+
+                if (passag.sair == 1) {
+                    _tprintf(L"Não existe o aeroporto de Origem!\n");
+                    TerminateThread(hThread, NULL);
+                    break;
+                }
+                if (passag.sair == 2) {
+                    _tprintf(L"Não existe o aeroporto de Destino!\n");
+                    TerminateThread(hThread, NULL);
+                    break;
+                }
+                if (passag.sair == 3 || passag.sairPassag == 1) {
+                    break;
+                }
+
+                if (passag.sairPassag == 0 && argc == 5) {
+                    TerminateThread(hThread_Espera, NULL);
+                }
+
+                if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
+                    _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
+                }
+                if (!_tcscmp(passag.fraseInfo, L"Em Viagem")) {
+                    _tprintf(L"Em viagem nas Coord x: [%d] Coord y: [%d]\n", passag.coordAtuais.posX, passag.coordAtuais.posY);
+                }
+                if (!_tcscmp(passag.fraseInfo, L"Chegou ao destino")) {
+                    _tprintf(L"Passageiro chegou ao destino [%s] com coordenadas x: [%d] y: [%d] no avião %d", passag.aeroDestino, passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
+                    TerminateThread(hThread, NULL);
+                    break;
+                }
             }
             if (passag.sair == 3 || passag.sairPassag == 1) {
-                 break;
-            }
-
-            if (passag.sairPassag == 0 && argc == 5) {
-                TerminateThread(hThread_Espera, NULL);
-            }
-
-            if (!_tcscmp(passag.fraseInfo, L"Vou embarcar")) {
-                _tprintf(L"Passageiro vai embarcar no avião %d nas coordenadas x: [%d] y: [%d]\n", passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
-            }
-            if (!_tcscmp(passag.fraseInfo, L"Em Viagem")) {
-                _tprintf(L"Em viagem nas Coord x: [%d] Coord y: [%d]\n", passag.coordAtuais.posX, passag.coordAtuais.posY);
-            }
-            if (!_tcscmp(passag.fraseInfo, L"Chegou ao destino")) {
-                _tprintf(L"Passageiro chegou ao destino [%s] com coordenadas x: [%d] y: [%d] no avião %d", passag.aeroDestino, passag.nrAviaoEmbarcado, passag.coordAtuais.posX, passag.coordAtuais.posY);
-                TerminateThread(hThread, NULL);
                 break;
             }
-        }
-        if (passag.sair == 3 || passag.sairPassag == 1) {
-            // _tprintf(L"\n\nEntrei 5\n\n");
-            break;
         }
     }
 
 
-    if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, NULL)) {
+    if (!WriteFile(passag.hPipe, &passag, sizeof(passageiro), NULL, &oOverlap)) {
         _tprintf(L"[ERRO] Escrever no pipe! (WriteFile)\n");
         return 1;
     }
