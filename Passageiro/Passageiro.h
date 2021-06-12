@@ -12,7 +12,7 @@ typedef struct {
 	coordenadas coordAtuais;
 	int tempoEspera;
 	int sair;	// 1-> Não existe o aero de origem! 
-	int sairPassag;
+	int *sairPassag;
 
 	HANDLE hPipe; // Handle pipe
 	// teste

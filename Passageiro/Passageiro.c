@@ -16,13 +16,12 @@ int _tmain(int argc, LPTSTR argv[]) {
     DWORD numBytesLidos;
 
     passageiro passag;
-    /*passag.sairPassag = (int*)malloc(sizeof(int));
+    passag.sairPassag = (int*)malloc(sizeof(int));
     if (passag.sairPassag == NULL) {
         _tprintf(L"[ERRO] Arranque do programa!\n");
         return 10;
-    }*/
+    }
 
-    passag.sairPassag = 0;
     if (argc < 4 || argc > 5) {
         _tprintf(L"[ERRO] Indique como argumentos: Origem, Destino, Nome e opcionalmente o tempo a aguardar\n ");
         return -1;
@@ -38,6 +37,7 @@ int _tmain(int argc, LPTSTR argv[]) {
     passag.idPassag = GetCurrentProcessId();
     passag.coordAtuais.posX = -1;
     passag.coordAtuais.posY = -1;
+    *(passag.sairPassag) = 0;
     passag.sair = 0;
 
 #ifdef UNICODE 
@@ -97,7 +97,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
     // Criar thread para escrever no pipe para terminar
     DWORD fSuccess;
-    while (passag.sair != 3 && (passag.sairPassag) != 1) {
+    while (passag.sair != 3 && *(passag.sairPassag) != 1) {
         ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
         if (WaitForSingleObject(hEvent, 6000) != WAIT_TIMEOUT) {
             GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
@@ -160,7 +160,7 @@ DWORD WINAPI ThreadEscritor(LPVOID lparam)
     } while (_tcscmp(passag->fraseInfo, TEXT("fim")));
     
     passag->sair = 3;
-    passag->sairPassag = 1;
+    *(passag->sairPassag) = 1;
     return 0;
 }
 
@@ -169,7 +169,7 @@ DWORD WINAPI ThreadEspera(LPVOID lparam)
 {
     passageiro* passag = (passageiro*)lparam;
     Sleep(passag->tempoEspera);
-    passag->sairPassag = 1;
+    *(passag->sairPassag) = 1;
     
     return 0;
 }
