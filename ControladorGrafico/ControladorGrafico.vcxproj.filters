@@ -84,5 +84,23 @@
     <Image Include="ControladorGrafico.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="fundo.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="fundo.bmp.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="bitmap2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="airplane.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="control.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

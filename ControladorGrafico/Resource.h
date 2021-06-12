@@ -15,6 +15,11 @@
 #define IDD_CRIARAEROPORTO              129
 #define IDD_LISTA_AEROPORTOS            130
 #define IDD_LISTA_PASSAG                131
+#define IDB_FUNDOBMP                    135
+#define IDB_BITMAP1                     138
+#define IDB_BITMAP2                     139
+#define IDB_BITMAP3                     140
+#define IDB_BITMAP4                     141
 #define IDC_NOMEAERO                    1000
 #define IDC_COORDX                      1001
 #define IDC_COORDY                      1002
@@ -57,7 +62,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32794
 #define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           110

@@ -11,13 +11,22 @@
 
 typedef struct {
 	HWND hWnd;
-	HDC hdcDB;
-	HBITMAP hbDB;
+	HDC memDC;
+	HBITMAP hBmp;
 	HDC hdc;
 	int xPos;
 	int yPos;
 	BOOL descAero;
 	BOOL descAviao;
+
+	// Pinturas
+	HBITMAP hBmpBG;
+	HBITMAP hBmpAviao;
+	HDC memDCBack;
+	BITMAP bmp;
+
+	HBITMAP hBmpAeroporto;
+
 } Pintor;
 
 typedef struct {

@@ -164,7 +164,13 @@
     <ResourceCompile Include="ControladorGrafico.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="airplane.bmp" />
+    <Image Include="bitmap1.bmp" />
+    <Image Include="bitmap2.bmp" />
+    <Image Include="control.bmp" />
     <Image Include="ControladorGrafico.ico" />
+    <Image Include="fundo.bmp" />
+    <Image Include="fundo.bmp.bmp" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
