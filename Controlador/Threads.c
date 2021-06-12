@@ -237,7 +237,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 	// Criação de todos os pipes possíveis a vir a existir
 	for (int i = 0; i < MAX_PASSAG; i++) {
 		//_tprintf(L"[ESCRITOR] A criar cópia do pipe [%s] .. (CreateNamedPipe)\n", PIPE_NAME);
-
 		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if (hEventTemp == NULL) {
 			_tprintf(L"[ERRO] Criação do evento! (CreateEvent)\n");
@@ -299,9 +298,8 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 					_tprintf(L"Error %d. [CONNECTING_STATE]\n", GetLastError());
 					return 0;
 				}
-				else {
+				else 
 					_tprintf(L"Vai ser inserido um novo passageiro. Indice do pipe: [%d]\n\n",indice);
-				}
 				infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 				break;
 				// Pending read operation 
@@ -329,6 +327,7 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 			infoPassagPipes->hPipes[indice].dwState = READING_STATE;
 			break;
 		case READING_STATE:
+			_tprintf(L"\nVai ser lida informação do pipe: [%d] ", indice);
 			fSuccess = ReadFile(infoPassagPipes->hPipes[indice].hPipeInst, &passagAux, sizeof(passageiro), &totalBytes, &infoPassagPipes->hPipes[indice].oOverLap);
 
 			if (fSuccess && totalBytes != 0)
@@ -363,7 +362,6 @@ DWORD WINAPI threadNamedPipes(LPVOID lpParam) {
 				continue;
 			}
 			else {
-				_tprintf(L"\n\nEntrei aqui :(\n\n");
 				DisconnectAndReconnect(infoPassagPipes, indice, passagAux);
 			}
 			break;

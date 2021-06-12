@@ -17,16 +17,3 @@ IDM_COMUNICACAO
 	IDC_INFO_AEROPORTO
 	IDC_LAERO_SAIR
 
-
-
-- quando aviao abandona, passageiros tambem morrem !!! avisar passageiros para sairemmmm
-
-meter lista vazia quando não tem elementos
-
-todo: passageiro, recolocar corretamente como estava.
-
-fazer load no outro sitio, no wm_resize
-e otimizar pipes
-
-
-Colocar a funcao disconnect noutro sitio
