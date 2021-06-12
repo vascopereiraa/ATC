@@ -99,7 +99,7 @@ int _tmain(int argc, LPTSTR argv[]) {
         fSuccess = ReadFile(passag.hPipe, &passag, sizeof(passageiro), &numBytesLidos, &oOverlap);
 
         if (WaitForSingleObject(hEvent, 6000) != WAIT_TIMEOUT) {
-            if (fSuccess && numBytesLidos != 0) {
+            //if (fSuccess && numBytesLidos != 0) {
                 GetOverlappedResult(passag.hPipe, &oOverlap, &numBytesLidos, FALSE);
                 // _tprintf(L"Dados do passageiro:\nID: %d\tNome: %s\nOrigem: %s\tDestino: %s\nFrase: %s\nIndicePipe: %d\n Tempo %d\n", passag.idPassag, passag.nomePassag, passag.aeroOrigem, passag.aeroDestino,
                   //   passag.fraseInfo, passag.indicePipe,passag.tempoEspera);
@@ -133,13 +133,11 @@ int _tmain(int argc, LPTSTR argv[]) {
                     TerminateThread(hThread, NULL);
                     break;
                 }
-            }
-            else {
-                break;
-            }
-            if (passag.sair == 3 || passag.sairPassag == 1) {
-                break;
-            }
+            // }
+           
+        }
+        if (passag.sair == 3 || passag.sairPassag == 1) {
+            break;
         }
     }
 

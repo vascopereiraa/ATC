@@ -86,16 +86,17 @@ int verificaAeroExiste(passageiro* passag, aeroporto* listaAeroportos, int tamAe
 }
 
 TCHAR* listaPass(const listaPassag* lista) {
-	TCHAR lstAux[500] = _TEXT("");
-	TCHAR lstPas[7000] = _TEXT("");
+	TCHAR lstAux[500] = _TEXT("\0");
+	TCHAR lstPas[7000] = _TEXT("\0");
 	for (int i = 0; i < MAX_PASSAG; ++i) {
 		if (!lista[i].isFree) {
 			_stprintf_s(lstAux, 500, L"ID: %d Nome: %s Aero Origem: %s Aero Destino: %s\n",
 				lista[i].passag.idPassag, lista[i].passag.nomePassag, lista[i].passag.aeroOrigem, lista[i].passag.aeroDestino);
 			_tcscat_s(lstPas, 7000, lstAux);
+			_tcscat_s(lstPas, 7000, L"\0");
 		}
 	}
-	if (lstPas[0] == 0) {
+	if (lstPas[0] == '\0') {
 		_tcscpy_s(lstPas, 100, L"Não existem Passageiros ainda!");
 	}
 	return lstPas;

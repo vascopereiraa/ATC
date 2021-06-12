@@ -59,7 +59,6 @@ void terminaControl(infoControlador* infoControl) {
     WaitForSingleObject(infoControl->hThreadTimer, INFINITE);
     WaitForSingleObject(infoControl->hThreadNamedPipes, INFINITE);
     terminaProcessos(infoControl);
-    encerraControlador(infoControl);
 }
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,

@@ -38,4 +38,4 @@ void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av);
 TCHAR* listaPass(const listaPassag* lista);
 void DisconnectAndReconnect(InfoPassagPipes* infoPassagPipes, int indice, const passageiro PassAux);
 void DestroyPassageiros(InfoPassagPipes* infoPassagPipe);
-void displayInfo(passageiro passagAux);
+void displayInfoPassag(passageiro passagAux);

@@ -133,6 +133,10 @@ void DisconnectAndReconnect(InfoPassagPipes* infoPassagPipes, int indice, const 
 		READING_STATE;     // ready to read
 }
 
+void displayInfoPassag(passageiro passagAux) {
+	_tprintf(L"\nInformação de passageiro-> IDPassag: %d Nome: %s Destino: %s Origem: %s \n", passagAux.idPassag, passagAux.nomePassag, passagAux.aeroDestino, passagAux.aeroOrigem); Sleep(1000);
+}
+
 BOOL embarcaPassageiros(InfoPassagPipes* infoPassagPipe, aviao* av) {
 	DWORD totalBytes;
 	for (int i = 0; i < MAX_PASSAG; i++) {
@@ -212,4 +216,3 @@ void informaPassagDestino(InfoPassagPipes* infoPassagPipe, aviao* av) {
 		}
 	}
 }
-
