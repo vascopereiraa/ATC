@@ -59,6 +59,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
     infoControl.pintor->hdc = NULL;
     infoControl.pintor->memDC = NULL;
     infoControl.pintor->hWnd = NULL;
+    infoControl.pintor->hBmpAeroporto = (HBITMAP)LoadImage(NULL, _TEXT("control.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    infoControl.pintor->hBmpAviao = (HBITMAP)LoadImage(NULL, _TEXT("airplane.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     // Inicializa a lista de Passageiros e namedpipes
     InfoPassagPipes* infoPassagPipes = inicializaListaPassagPipes();
@@ -253,7 +255,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, infoControlador* infoContro
    {
       return FALSE;
    }
-
    SetWindowLongPtr(hWnd, 0, (LONG_PTR) infoControl);
 
    ShowWindow(hWnd, nCmdShow);
@@ -265,7 +266,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, infoControlador* infoContro
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     infoControlador* dados = (infoControlador*)GetWindowLongPtr(hWnd, 0);
-    // infoControlador* dados = (infoControlador*)lParam;
     TCHAR listaAux[7000] = _TEXT(" ");
     int indice = -1;
  
@@ -584,31 +584,21 @@ int displayInfo(HWND hWnd, infoControlador* dados) {
     
 int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 	RECT rectClientWindow = { 0, 0, 0, 0 };
-	SIZE sizeTextLogicalSize = { 0, 0 };
-	int tamstrchars = 0;
-	// Paint brush
 	PAINTSTRUCT ps;
-	TCHAR mystring[200] = _TEXT("");
 
 	dados->pintor->hdc = BeginPaint(hWnd, &ps);
-	// dados->pintor->hdc = GetDC(hWnd);
-	// Colocar cor do texto a azul
-	SetTextColor(dados->pintor->hdc, RGB(0, 0, 255));
+
 	GetClientRect(hWnd, &rectClientWindow);
-    // dados->pintor->hBmpBG =(HBITMAP) LoadImage(NULL, _TEXT("C:\\Users\\vascopereira\\source\\repos\\ATC\\ControladorGrafico\\fundo.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    dados->pintor->hBmpAeroporto =(HBITMAP) LoadImage(NULL, _TEXT("C:\\Users\\vascopereira\\source\\repos\\ATC\\ControladorGrafico\\control.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    dados->pintor->hBmpAviao =(HBITMAP) LoadImage(NULL, _TEXT("C:\\Users\\vascopereira\\source\\repos\\ATC\\ControladorGrafico\\airplane.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if (dados->pintor->hBmp == NULL)
 		dados->pintor->hBmp = CreateCompatibleBitmap(dados->pintor->hdc, rectClientWindow.right, rectClientWindow.bottom);
     dados->pintor->memDC = CreateCompatibleDC(dados->pintor->hdc);
     dados->pintor->memDCBack = CreateCompatibleDC(dados->pintor->memDC);
 
-	// FillRect(dados->pintor->hdcDB, &rectClientWindow, (HBRUSH)GetStockObject(WHITE_BRUSH));
     SelectObject(dados->pintor->memDC, dados->pintor->hBmp);
+    // Associar ao buffer para pintar o hBmp do avião
     SelectObject(dados->pintor->memDCBack, dados->pintor->hBmpAviao);
 
     BitBlt(dados->pintor->memDC, 0, 0, rectClientWindow.right, rectClientWindow.bottom, NULL, 0, 0, WHITENESS);
-    // BitBlt(dados->pintor->memDC, 0, 0, dados->pintor->bmp.bmWidth, dados->pintor->bmp.bmHeight, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 
 	if (dados->pintor->descAero) {
 		verificaExistenciaAero(dados->pintor->memDC, dados);
@@ -627,37 +617,26 @@ int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 	for (int i = 0; i < dados->tamAvioes; ++i) {
 		if (dados->listaAvioes[i].isFree == FALSE) {
 			if (dados->listaAvioes[i].av.emViagem == TRUE)
-                BitBlt(dados->pintor->memDC, dados->listaAvioes[i].av.atuais.posX,
-                    dados->listaAvioes[i].av.atuais.posY, 10,
-                    10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
+                BitBlt(dados->pintor->memDC, 
+                    dados->listaAvioes[i].av.atuais.posX,
+                    dados->listaAvioes[i].av.atuais.posY,
+                    10,10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 		}
 	}
-
+    // Associar ao buffer para pintar o hBmp do aero
     SelectObject(dados->pintor->memDCBack, dados->pintor->hBmpAeroporto);
 
 	for (int i = 0; i < dados->tamAeroporto; ++i) {
-		// Função diz qual o tamanho da string em pixeis, valor fica em sizeTextLogicalSize
-        BitBlt(dados->pintor->memDC, dados->listaAeroportos[i].localizacao.posX,
-            dados->listaAeroportos[i].localizacao.posX, 10,
-            10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
+		// Coloca nas coordenadas do respetivo aewroporto, a imagem existente no memDCBack, com 10x10px
+        BitBlt(dados->pintor->memDC, 
+            dados->listaAeroportos[i].localizacao.posX,
+            dados->listaAeroportos[i].localizacao.posX,
+            10,10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 	}
-    
-
-	//BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->memDC, 0, 0, SRCCOPY);
-	//BitBlt(dados->pintor->memDC, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->memDC, 0, 0, SRCCOPY);
-	// EndPaint(hWnd, &ps);
-    
-
+    // Double buffer, switcharo
     BitBlt(dados->pintor->hdc, 0, 0, rectClientWindow.right, rectClientWindow.bottom, dados->pintor->memDC, 0, 0, SRCCOPY);
 
     DeleteDC(dados->pintor->memDC);
     DeleteDC(dados->pintor->memDCBack);
-    
     EndPaint(hWnd, &ps);
-    // ReleaseDC(hWnd, dados->pintor->hdc);
-}
-
-void testePintura(HWND hWnd, infoControlador* dados) {
-    
-
 }
