@@ -1,8 +1,9 @@
-#ifndef __CONSTANTES_H__
-#define __CONSTANTES_H__
+
+#ifndef __CONSTANTES_TEXTO_H__
+#define __CONSTANTES_TEXTO_H__
 
 // DEBUG
-#define DEBUG
+//#define DEBUG
 //#define TESTES
 
 // Controlador
@@ -35,4 +36,4 @@
 #define MAX_AEROPORTOS _TEXT("MAX_AIRPORT")
 #define MAX_AVIOES _TEXT("MAX_AIRPLANES")
 
-#endif // !__CONSTANTES_H__
+#endif // !__CONSTANTES_TEXTO_H__

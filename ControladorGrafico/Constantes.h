@@ -2,7 +2,7 @@
 #define __CONSTANTES_H__
 
 // DEBUG
-#define DEBUG
+//#define DEBUG
 //#define TESTES
 
 // Controlador

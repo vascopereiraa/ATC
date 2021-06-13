@@ -15,11 +15,11 @@
 #define IDD_CRIARAEROPORTO              129
 #define IDD_LISTA_AEROPORTOS            130
 #define IDD_LISTA_PASSAG                131
-#define IDB_FUNDOBMP                    135
-#define IDB_BITMAP1                     138
-#define IDB_BITMAP2                     139
 #define IDB_BITMAP3                     140
+#define IDB_BITMAPAvia                  140
+#define IDB_BITMAP_AVIAO                140
 #define IDB_BITMAP4                     141
+#define IDB_BITMAP_ATC                  141
 #define IDC_NOMEAERO                    1000
 #define IDC_COORDX                      1001
 #define IDC_COORDY                      1002

@@ -31,6 +31,7 @@ void verificaExistenciaAero(HWND hWnd, infoControlador* dados);
 void verificaExistenciaAviao(HWND hWnd, infoControlador* dados, const int* indice);
 
 void terminaProcessos(infoControlador* infoControl) {
+    EnterCriticalSection(&infoControl->criticalSectionControl);
 #ifdef TESTES
     for (int i = 1; i < infoControl->tamAvioes; ++i) {
 #else
@@ -52,6 +53,7 @@ void terminaProcessos(infoControlador* infoControl) {
             }
         }
     }
+    LeaveCriticalSection(&infoControl->criticalSectionControl);
 }
 
 void terminaControl(infoControlador* infoControl) {
@@ -231,7 +233,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    terminaControl(&infoControl);
     return (int) msg.wParam;
 }
 
@@ -614,7 +615,7 @@ int displayInfoBitBlt(HWND hWnd, infoControlador* dados, const int* indice) {
 		// Coloca nas coordenadas do respetivo aeroporto, a imagem existente no memDCBack, com 10x10px
         BitBlt(dados->pintor->memDC, 
             dados->listaAeroportos[i].localizacao.posX,
-            dados->listaAeroportos[i].localizacao.posX,
+            dados->listaAeroportos[i].localizacao.posY,
             10,10, dados->pintor->memDCBack, 0, 0, SRCCOPY);
 	}
     // Double buffer, trocar o ecrã visivel ao utilizador (hdc) pelo que tem a pintura atualizada memDC.
